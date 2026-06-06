@@ -12,7 +12,67 @@
   <div id="app">
     <h1>ATC24 Flight Plan Generator</h1>
     <form id="flight-form">
-      <!-- fields added in Task 2 -->
+      <div class="field-group">
+        <label for="ingame-callsign">In-Game Callsign</label>
+        <input type="text" id="ingame-callsign" placeholder="e.g. Striker 9212" />
+      </div>
+
+      <div class="field-group">
+        <label for="callsign">Callsign</label>
+        <input type="text" id="callsign" placeholder="e.g. VIR92" />
+      </div>
+
+      <div class="field-group">
+        <label for="aircraft">Aircraft</label>
+        <input type="text" id="aircraft" placeholder="e.g. A350" />
+      </div>
+
+      <div class="field-group">
+        <label for="flight-rules">Flight Rules</label>
+        <select id="flight-rules">
+          <option value="">-- Select --</option>
+          <option value="IFR">IFR</option>
+          <option value="VFR">VFR</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="dep-region">Departing Region</label>
+        <select id="dep-region">
+          <option value="">-- Select Region --</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="dep-airport">Departing Airport</label>
+        <select id="dep-airport" disabled>
+          <option value="">-- Select Airport --</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="arr-region">Arriving Region</label>
+        <select id="arr-region">
+          <option value="">-- Select Region --</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="arr-airport">Arriving Airport</label>
+        <select id="arr-airport" disabled>
+          <option value="">-- Select Airport --</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label for="flight-level">Flight Level</label>
+        <input type="number" id="flight-level" placeholder="e.g. 100" min="0" />
+      </div>
+
+      <div class="field-group">
+        <label for="route">Route</label>
+        <input type="text" id="route" placeholder="e.g. RDV" />
+      </div>
     </form>
     <div id="output-section">
       <label>Generated Command</label>
