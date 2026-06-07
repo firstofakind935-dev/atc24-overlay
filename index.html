@@ -325,6 +325,46 @@
       color: #ffffff;
     }
 
+    #bar-shrink-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      font-size: 0.85rem;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    #bar-shrink-btn:hover {
+      border-color: #e3b341;
+      color: #e3b341;
+    }
+
+    #bar-pill {
+      display: none;
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 20px;
+      color: #e6edf3;
+      font-size: 0.8rem;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      padding: 0.3rem 0.8rem;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s;
+      z-index: 999;
+    }
+
+    #bar-pill:hover {
+      background-color: #1f6feb;
+      border-color: #1f6feb;
+    }
+
     @media (max-width: 500px) {
       #flight-form,
       #vspeed-runway-inputs,
@@ -347,8 +387,10 @@
       <span class="bar-vspeed"><span class="bar-vname" id="bar-name3">V2</span><span class="bar-vval" id="bar-val3">—</span></span>
     </div>
     <button id="bar-expand-btn">▼</button>
+    <button id="bar-shrink-btn" title="Minimise to pill">⊟</button>
     <button id="bar-close-btn" title="Close overlay">✕</button>
   </div>
+  <div id="bar-pill">🛩 ATC24</div>
   <div id="app">
     <h1>ATC24 Flight Plan Generator</h1>
     <form id="flight-form">
@@ -849,6 +891,23 @@
     barExpandBtn.addEventListener("click", () => setExpanded(!isExpanded));
     phaseTakeoff.addEventListener("click", () => setBarPhase("takeoff"));
     phaseLanding.addEventListener("click", () => setBarPhase("landing"));
+
+    const barPill = document.getElementById("bar-pill");
+    const barEl   = document.getElementById("bar");
+
+    document.getElementById("bar-shrink-btn").addEventListener("click", () => {
+      barEl.style.display  = "none";
+      appPanel.style.display = "none";
+      barPill.style.display  = "block";
+      isExpanded = false;
+      barExpandBtn.textContent = "▼";
+    });
+
+    barPill.addEventListener("click", () => {
+      barEl.style.display  = "flex";
+      barPill.style.display = "none";
+    });
+
     document.getElementById("bar-close-btn").addEventListener("click", () => {
       window.electronAPI?.closeWindow();
     });
