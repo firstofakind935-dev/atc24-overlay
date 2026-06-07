@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 try {
   contextBridge.exposeInMainWorld('electronAPI', {
-    resizeWindow: (expanded) => ipcRenderer.send('resize-window', expanded),
+    setIgnoreMouseEvents: (ignore) => ipcRenderer.send('set-ignore-mouse', ignore),
     closeWindow: () => ipcRenderer.send('close-window'),
   });
 } catch (e) {

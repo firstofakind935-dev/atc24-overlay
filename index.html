@@ -12,15 +12,14 @@
     }
 
     body {
-      background-color: #0d1117;
+      background-color: transparent;
       color: #e6edf3;
       font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 0;
-      overflow-y: auto;
+      overflow: hidden;
     }
 
     #app {
@@ -829,10 +828,16 @@
 
     function setExpanded(expanded) {
       isExpanded = expanded;
-      window.electronAPI?.resizeWindow(expanded);
       appPanel.style.display = expanded ? "block" : "none";
       barExpandBtn.textContent = expanded ? "▲" : "▼";
     }
+
+    // Click-through: transparent areas pass clicks to the game, interactive areas receive them
+    document.addEventListener('mousemove', (e) => {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const isInteractive = el && el !== document.documentElement && el !== document.body;
+      window.electronAPI?.setIgnoreMouseEvents(!isInteractive);
+    });
 
     function setBarPhase(newPhase) {
       barPhase = newPhase;
