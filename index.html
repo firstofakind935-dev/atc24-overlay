@@ -846,7 +846,8 @@
 
     function updateBar() {
       const aircraft = aircraftEl.value.trim();
-      barAircraftEl.textContent = aircraft || "— No aircraft —";
+      const callsign = callsignEl.value.trim();
+      barAircraftEl.textContent = callsign || "— No callsign —";
 
       const speeds = Object.entries(V_SPEEDS).find(
         ([k]) => k.toLowerCase() === aircraft.toLowerCase()
@@ -914,6 +915,7 @@
     });
     aircraftEl.addEventListener("input",  updateBar);
     aircraftEl.addEventListener("change", updateBar);
+    callsignEl.addEventListener("input",  updateBar);
 
     updateBar();
   </script>
