@@ -764,6 +764,69 @@
       document.body.removeChild(ta);
       setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
     }
+
+    // ── Bar ────────────────────────────────────────────────────
+    const barAircraftEl = document.getElementById("bar-aircraft");
+    const barName1El    = document.getElementById("bar-name1");
+    const barName2El    = document.getElementById("bar-name2");
+    const barName3El    = document.getElementById("bar-name3");
+    const barVal1El     = document.getElementById("bar-val1");
+    const barVal2El     = document.getElementById("bar-val2");
+    const barVal3El     = document.getElementById("bar-val3");
+    const barExpandBtn  = document.getElementById("bar-expand-btn");
+    const phaseTakeoff  = document.getElementById("phase-takeoff");
+    const phaseLanding  = document.getElementById("phase-landing");
+    const appPanel      = document.getElementById("app");
+
+    let isExpanded = false;
+    let barPhase   = "takeoff"; // "takeoff" | "landing"
+
+    function updateBar() {
+      const aircraft = aircraftEl.value.trim();
+      barAircraftEl.textContent = aircraft || "— No aircraft —";
+
+      const speeds = Object.entries(V_SPEEDS).find(
+        ([k]) => k.toLowerCase() === aircraft.toLowerCase()
+      )?.[1];
+
+      if (barPhase === "takeoff") {
+        barName1El.textContent = "V1";
+        barName2El.textContent = "VR";
+        barName3El.textContent = "V2";
+        barVal1El.textContent = speeds ? `${speeds.v1} kts` : "—";
+        barVal2El.textContent = speeds ? `${speeds.vr} kts` : "—";
+        barVal3El.textContent = speeds ? `${speeds.v2} kts` : "—";
+      } else {
+        barName1El.textContent = "Vapp";
+        barName2El.textContent = "Vref";
+        barName3El.textContent = "";
+        barVal1El.textContent = speeds ? `${speeds.vapp} kts` : "—";
+        barVal2El.textContent = speeds ? `${speeds.vref} kts` : "—";
+        barVal3El.textContent = "";
+      }
+    }
+
+    function setExpanded(expanded) {
+      isExpanded = expanded;
+      appPanel.style.display = expanded ? "block" : "none";
+      barExpandBtn.textContent = expanded ? "▲" : "▼";
+      window.electronAPI?.resizeWindow(expanded);
+    }
+
+    function setBarPhase(newPhase) {
+      barPhase = newPhase;
+      phaseTakeoff.classList.toggle("active", barPhase === "takeoff");
+      phaseLanding.classList.toggle("active", barPhase === "landing");
+      updateBar();
+    }
+
+    barExpandBtn.addEventListener("click", () => setExpanded(!isExpanded));
+    phaseTakeoff.addEventListener("click", () => setBarPhase("takeoff"));
+    phaseLanding.addEventListener("click", () => setBarPhase("landing"));
+    aircraftEl.addEventListener("input",  updateBar);
+    aircraftEl.addEventListener("change", updateBar);
+
+    updateBar();
   </script>
 </body>
 </html>
