@@ -44,3 +44,8 @@ ipcMain.on('resize-window', (_event, expanded) => {
   const { width } = screen.getPrimaryDisplay().workAreaSize;
   win.setSize(width, expanded ? FULL_HEIGHT : BAR_HEIGHT);
 });
+
+ipcMain.on('close-window', () => {
+  if (!win) return;
+  win.close();
+});

@@ -308,6 +308,24 @@
       color: #58a6ff;
     }
 
+    #bar-close-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      font-size: 0.85rem;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    #bar-close-btn:hover {
+      background-color: #da3633;
+      border-color: #da3633;
+      color: #ffffff;
+    }
+
     @media (max-width: 500px) {
       #flight-form,
       #vspeed-runway-inputs,
@@ -330,6 +348,7 @@
       <span class="bar-vspeed"><span class="bar-vname" id="bar-name3">V2</span><span class="bar-vval" id="bar-val3">—</span></span>
     </div>
     <button id="bar-expand-btn">▼</button>
+    <button id="bar-close-btn" title="Close overlay">✕</button>
   </div>
   <div id="app">
     <h1>ATC24 Flight Plan Generator</h1>
@@ -825,6 +844,9 @@
     barExpandBtn.addEventListener("click", () => setExpanded(!isExpanded));
     phaseTakeoff.addEventListener("click", () => setBarPhase("takeoff"));
     phaseLanding.addEventListener("click", () => setBarPhase("landing"));
+    document.getElementById("bar-close-btn").addEventListener("click", () => {
+      window.electronAPI?.closeWindow();
+    });
     aircraftEl.addEventListener("input",  updateBar);
     aircraftEl.addEventListener("change", updateBar);
 
