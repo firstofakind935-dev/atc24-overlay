@@ -205,6 +205,9 @@
       navigator.clipboard.writeText(buildCommand()).then(() => {
         copyBtn.textContent = "Copied!";
         setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+      }).catch(() => {
+        copyBtn.textContent = "Failed!";
+        setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
       });
     });
   </script>
