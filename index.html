@@ -111,6 +111,23 @@
       background-color: #2ea043;
     }
 
+    #reset-btn {
+      background-color: #21262d;
+      color: #e6edf3;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0.45rem 1.1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background-color 0.15s;
+      margin-left: 0.5rem;
+    }
+
+    #reset-btn:hover {
+      background-color: #da3633;
+      border-color: #da3633;
+    }
+
     @media (max-width: 500px) {
       #flight-form {
         grid-template-columns: 1fr;
@@ -188,6 +205,7 @@
       <label>Generated Command</label>
       <div id="command-output"></div>
       <button type="button" id="copy-btn">Copy</button>
+      <button type="button" id="reset-btn">Reset</button>
     </div>
   </div>
   <script>
@@ -204,7 +222,7 @@
       ],
       "Izolirani": [
         { name: "Al Najaf", icao: "IJAF" },
-        { name: "Izolirani Intl.", icao: "ZOL" },
+        { name: "Izolirani Intl.", icao: "IZOL" },
       ],
       "Orenji": [
         { name: "Bird Island Airfield", icao: "IBRD" },
@@ -343,6 +361,22 @@
       } else {
         fallbackCopy(command);
       }
+    });
+
+    const resetBtn = document.getElementById("reset-btn");
+
+    resetBtn.addEventListener("click", () => {
+      ingameCallsignEl.value = "";
+      callsignEl.value = "";
+      aircraftEl.value = "";
+      flightRulesEl.value = "";
+      depRegionEl.value = "";
+      populateAirports(depRegionEl, depAirportEl);
+      arrRegionEl.value = "";
+      populateAirports(arrRegionEl, arrAirportEl);
+      flightLevelEl.value = "";
+      routeEl.value = "";
+      updateCommand();
     });
 
     function fallbackCopy(text) {
