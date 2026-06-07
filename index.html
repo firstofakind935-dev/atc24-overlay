@@ -165,7 +165,41 @@
     depRegionEl.addEventListener("change", () => populateAirports(depRegionEl, depAirportEl));
     arrRegionEl.addEventListener("change", () => populateAirports(arrRegionEl, arrAirportEl));
 
-    // placeholders for Tasks 4–5
+    const ingameCallsignEl = document.getElementById("ingame-callsign");
+    const callsignEl = document.getElementById("callsign");
+    const aircraftEl = document.getElementById("aircraft");
+    const flightRulesEl = document.getElementById("flight-rules");
+    const flightLevelEl = document.getElementById("flight-level");
+    const routeEl = document.getElementById("route");
+    const commandOutputEl = document.getElementById("command-output");
+
+    function buildCommand() {
+      const ingameCallsign = ingameCallsignEl.value;
+      const callsign = callsignEl.value;
+      const aircraft = aircraftEl.value;
+      const flightRules = flightRulesEl.value;
+      const departing = depAirportEl.value;
+      const arriving = arrAirportEl.value;
+      const flightLevel = flightLevelEl.value;
+      const route = routeEl.value;
+
+      return `/createflightplan ingamecallsign:${ingameCallsign} callsign:${callsign} aircraft:${aircraft} flightrules:${flightRules} departing:${departing} arriving:${arriving} flightlevel:${flightLevel} route:${route}`;
+    }
+
+    function updateCommand() {
+      commandOutputEl.textContent = buildCommand();
+    }
+
+    [ingameCallsignEl, callsignEl, aircraftEl, flightRulesEl,
+     depAirportEl, arrAirportEl, flightLevelEl, routeEl
+    ].forEach(el => el.addEventListener("input", updateCommand));
+
+    [depAirportEl, arrAirportEl, flightRulesEl
+    ].forEach(el => el.addEventListener("change", updateCommand));
+
+    updateCommand();
+
+    // placeholder for Task 5
   </script>
 </body>
 </html>
