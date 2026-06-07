@@ -132,8 +132,88 @@
       border-color: #da3633;
     }
 
+    #vspeed-section {
+      margin-top: 1.5rem;
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    #vspeed-section h2 {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #8b949e;
+      margin-bottom: 1rem;
+    }
+
+    #vspeed-runway-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    #vspeed-display {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .vspeed-col {
+      background-color: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0.75rem;
+    }
+
+    .vspeed-header {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #58a6ff;
+      margin-bottom: 0.6rem;
+    }
+
+    .vspeed-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid #21262d;
+    }
+
+    .vspeed-row:last-child {
+      border-bottom: none;
+    }
+
+    .vspeed-name {
+      font-size: 0.85rem;
+      color: #8b949e;
+      font-weight: 600;
+    }
+
+    .vspeed-val {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.95rem;
+      color: #3fb950;
+    }
+
+    .vspeed-val.na {
+      color: #8b949e;
+    }
+
+    #vspeed-note {
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-top: 0.75rem;
+    }
+
     @media (max-width: 500px) {
-      #flight-form {
+      #flight-form,
+      #vspeed-runway-inputs,
+      #vspeed-display {
         grid-template-columns: 1fr;
       }
     }
@@ -213,6 +293,33 @@
         <button type="button" id="copy-btn">Copy</button>
         <button type="button" id="reset-btn">Reset</button>
       </div>
+    </div>
+    <div id="vspeed-section">
+      <h2>V-Speed Calculator</h2>
+      <div id="vspeed-runway-inputs">
+        <div class="field-group">
+          <label for="dep-runway">Departure Runway</label>
+          <input type="text" id="dep-runway" placeholder="e.g. 27L" />
+        </div>
+        <div class="field-group">
+          <label for="arr-runway">Arrival Runway</label>
+          <input type="text" id="arr-runway" placeholder="e.g. 09R" />
+        </div>
+      </div>
+      <div id="vspeed-display">
+        <div class="vspeed-col">
+          <div class="vspeed-header">TAKEOFF <span id="dep-runway-label"></span></div>
+          <div class="vspeed-row"><span class="vspeed-name">V1</span><span class="vspeed-val" id="v1-val">—</span></div>
+          <div class="vspeed-row"><span class="vspeed-name">VR</span><span class="vspeed-val" id="vr-val">—</span></div>
+          <div class="vspeed-row"><span class="vspeed-name">V2</span><span class="vspeed-val" id="v2-val">—</span></div>
+        </div>
+        <div class="vspeed-col">
+          <div class="vspeed-header">LANDING <span id="arr-runway-label"></span></div>
+          <div class="vspeed-row"><span class="vspeed-name">Vapp</span><span class="vspeed-val" id="vapp-val">—</span></div>
+          <div class="vspeed-row"><span class="vspeed-name">Vref</span><span class="vspeed-val" id="vref-val">—</span></div>
+        </div>
+      </div>
+      <p id="vspeed-note"></p>
     </div>
   </div>
   <script>
@@ -413,6 +520,78 @@
     aircraftEl.addEventListener("input", updateFlightRulesForAircraft);
     aircraftEl.addEventListener("change", updateFlightRulesForAircraft);
 
+    // V-Speed data (typical mid-weight values, kts)
+    const V_SPEEDS = {
+      "A220":     { v1: 135, vr: 140, v2: 145, vapp: 128, vref: 122 },
+      "A320":     { v1: 140, vr: 145, v2: 150, vapp: 140, vref: 133 },
+      "A330":     { v1: 150, vr: 155, v2: 165, vapp: 142, vref: 135 },
+      "A340":     { v1: 155, vr: 160, v2: 170, vapp: 145, vref: 138 },
+      "A350":     { v1: 155, vr: 162, v2: 170, vapp: 140, vref: 133 },
+      "A380":     { v1: 165, vr: 175, v2: 185, vapp: 148, vref: 140 },
+      "BelugaXL": { v1: 155, vr: 163, v2: 172, vapp: 145, vref: 138 },
+      "B707":     { v1: 148, vr: 155, v2: 162, vapp: 140, vref: 133 },
+      "B727":     { v1: 145, vr: 150, v2: 158, vapp: 138, vref: 131 },
+      "B737":     { v1: 138, vr: 142, v2: 148, vapp: 135, vref: 128 },
+      "B747":     { v1: 165, vr: 175, v2: 185, vapp: 150, vref: 143 },
+      "B757":     { v1: 145, vr: 150, v2: 158, vapp: 138, vref: 131 },
+      "B767":     { v1: 148, vr: 155, v2: 162, vapp: 140, vref: 133 },
+      "B777":     { v1: 158, vr: 165, v2: 175, vapp: 145, vref: 138 },
+      "B787":     { v1: 150, vr: 158, v2: 165, vapp: 140, vref: 133 },
+      "ATR-72":   { v1: 90,  vr: 95,  v2: 100, vapp: 96,  vref: 92  },
+      "CRJ700":   { v1: 118, vr: 123, v2: 128, vapp: 122, vref: 118 },
+      "Q400":     { v1: 95,  vr: 100, v2: 105, vapp: 100, vref: 96  },
+      "L-1011":   { v1: 155, vr: 163, v2: 172, vapp: 145, vref: 138 },
+      "DC-10":    { v1: 155, vr: 163, v2: 172, vapp: 145, vref: 138 },
+      "MD-11":    { v1: 158, vr: 165, v2: 175, vapp: 147, vref: 140 },
+      "MD-90":    { v1: 140, vr: 145, v2: 152, vapp: 137, vref: 130 },
+      "An-22":    { v1: 160, vr: 170, v2: 180, vapp: 155, vref: 148 },
+      "An-225":   { v1: 180, vr: 190, v2: 200, vapp: 168, vref: 160 },
+      "Comet":    { v1: 130, vr: 138, v2: 145, vapp: 128, vref: 122 },
+    };
+
+    const depRunwayEl  = document.getElementById("dep-runway");
+    const arrRunwayEl  = document.getElementById("arr-runway");
+    const vspeedNoteEl = document.getElementById("vspeed-note");
+
+    function updateVSpeeds() {
+      const aircraft = aircraftEl.value.trim();
+      const speeds = Object.entries(V_SPEEDS).find(
+        ([k]) => k.toLowerCase() === aircraft.toLowerCase()
+      )?.[1];
+
+      const depRwy = depRunwayEl.value.trim();
+      const arrRwy = arrRunwayEl.value.trim();
+
+      document.getElementById("dep-runway-label").textContent = depRwy ? `— RWY ${depRwy}` : "";
+      document.getElementById("arr-runway-label").textContent = arrRwy ? `— RWY ${arrRwy}` : "";
+
+      const ids = ["v1-val", "vr-val", "v2-val", "vapp-val", "vref-val"];
+
+      if (speeds) {
+        const values = [speeds.v1, speeds.vr, speeds.v2, speeds.vapp, speeds.vref];
+        ids.forEach((id, i) => {
+          const el = document.getElementById(id);
+          el.textContent = `${values[i]} kts`;
+          el.classList.remove("na");
+        });
+        vspeedNoteEl.textContent = "Values are typical mid-weight approximations.";
+      } else {
+        ids.forEach(id => {
+          const el = document.getElementById(id);
+          el.textContent = aircraft ? "N/A" : "—";
+          el.classList.toggle("na", !!aircraft);
+        });
+        vspeedNoteEl.textContent = aircraft ? "No V-speed data for this aircraft type." : "";
+      }
+    }
+
+    aircraftEl.addEventListener("input", updateVSpeeds);
+    aircraftEl.addEventListener("change", updateVSpeeds);
+    depRunwayEl.addEventListener("input", updateVSpeeds);
+    arrRunwayEl.addEventListener("input", updateVSpeeds);
+
+    updateVSpeeds();
+
     const copyBtn = document.getElementById("copy-btn");
 
     copyBtn.addEventListener("click", () => {
@@ -443,7 +622,10 @@
       populateAirports(arrRegionEl, arrAirportEl);
       flightLevelEl.value = "";
       routeEl.value = "";
+      depRunwayEl.value = "";
+      arrRunwayEl.value = "";
       updateCommand();
+      updateVSpeeds();
     });
 
     function fallbackCopy(text) {
