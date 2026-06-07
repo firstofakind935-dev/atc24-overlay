@@ -520,33 +520,36 @@
     aircraftEl.addEventListener("input", updateFlightRulesForAircraft);
     aircraftEl.addEventListener("change", updateFlightRulesForAircraft);
 
-    // V-Speed data (typical mid-weight values, kts)
+    // V-Speed data (kts). Formulas from cityusergh.github.io/ptfsperf:
+    //   VR = rotate speed, V2 = VR+4, Vref = ceil(stall*1.3), Vapp = Vref+5
+    //   V1 ≈ VR-10 (runway-dependent in full calc; this is a typical approximation)
+    // (*) = derived from ptfsperf data   (~) = estimated
     const V_SPEEDS = {
-      "A220":     { v1: 135, vr: 140, v2: 145, vapp: 128, vref: 122 },
-      "A320":     { v1: 140, vr: 145, v2: 150, vapp: 140, vref: 133 },
-      "A330":     { v1: 150, vr: 155, v2: 165, vapp: 142, vref: 135 },
-      "A340":     { v1: 155, vr: 160, v2: 170, vapp: 145, vref: 138 },
-      "A350":     { v1: 155, vr: 162, v2: 170, vapp: 140, vref: 133 },
-      "A380":     { v1: 165, vr: 175, v2: 185, vapp: 148, vref: 140 },
-      "BelugaXL": { v1: 155, vr: 163, v2: 172, vapp: 145, vref: 138 },
-      "B707":     { v1: 148, vr: 155, v2: 162, vapp: 140, vref: 133 },
-      "B727":     { v1: 145, vr: 150, v2: 158, vapp: 138, vref: 131 },
-      "B737":     { v1: 138, vr: 142, v2: 148, vapp: 135, vref: 128 },
-      "B747":     { v1: 165, vr: 175, v2: 185, vapp: 150, vref: 143 },
-      "B757":     { v1: 145, vr: 150, v2: 158, vapp: 138, vref: 131 },
-      "B767":     { v1: 148, vr: 155, v2: 162, vapp: 140, vref: 133 },
-      "B777":     { v1: 158, vr: 165, v2: 175, vapp: 145, vref: 138 },
-      "B787":     { v1: 150, vr: 158, v2: 165, vapp: 140, vref: 133 },
-      "ATR-72":   { v1: 90,  vr: 95,  v2: 100, vapp: 96,  vref: 92  },
-      "CRJ700":   { v1: 118, vr: 123, v2: 128, vapp: 122, vref: 118 },
-      "Q400":     { v1: 95,  vr: 100, v2: 105, vapp: 100, vref: 96  },
-      "L-1011":   { v1: 155, vr: 163, v2: 172, vapp: 145, vref: 138 },
-      "DC-10":    { v1: 155, vr: 163, v2: 172, vapp: 145, vref: 138 },
-      "MD-11":    { v1: 158, vr: 165, v2: 175, vapp: 147, vref: 140 },
-      "MD-90":    { v1: 140, vr: 145, v2: 152, vapp: 137, vref: 130 },
-      "An-22":    { v1: 160, vr: 170, v2: 180, vapp: 155, vref: 148 },
-      "An-225":   { v1: 180, vr: 190, v2: 200, vapp: 168, vref: 160 },
-      "Comet":    { v1: 130, vr: 138, v2: 145, vapp: 128, vref: 122 },
+      "A220":     { v1: 137, vr: 147, v2: 151, vref: 137, vapp: 142 }, // *
+      "A320":     { v1: 149, vr: 159, v2: 163, vref: 143, vapp: 148 }, // *
+      "A330":     { v1: 149, vr: 159, v2: 163, vref: 143, vapp: 148 }, // *
+      "A340":     { v1: 149, vr: 159, v2: 163, vref: 143, vapp: 148 }, // ~ (based on A330)
+      "A350":     { v1: 159, vr: 169, v2: 173, vref: 153, vapp: 158 }, // *
+      "A380":     { v1: 160, vr: 170, v2: 174, vref: 153, vapp: 158 }, // *
+      "BelugaXL": { v1: 159, vr: 169, v2: 173, vref: 153, vapp: 158 }, // ~ (based on A350)
+      "B707":     { v1: 141, vr: 151, v2: 155, vref: 143, vapp: 148 }, // ~ (based on B747)
+      "B727":     { v1: 142, vr: 152, v2: 156, vref: 143, vapp: 148 }, // ~ (based on B737)
+      "B737":     { v1: 142, vr: 152, v2: 156, vref: 143, vapp: 148 }, // *
+      "B747":     { v1: 141, vr: 151, v2: 155, vref: 143, vapp: 148 }, // *
+      "B757":     { v1: 142, vr: 152, v2: 156, vref: 143, vapp: 148 }, // ~ (based on B737)
+      "B767":     { v1: 149, vr: 159, v2: 163, vref: 143, vapp: 148 }, // ~ (based on B737/A320)
+      "B777":     { v1: 152, vr: 162, v2: 166, vref: 156, vapp: 161 }, // *
+      "B787":     { v1: 152, vr: 162, v2: 166, vref: 156, vapp: 161 }, // *
+      "ATR-72":   { v1: 127, vr: 137, v2: 141, vref: 150, vapp: 155 }, // *
+      "CRJ700":   { v1: 126, vr: 136, v2: 140, vref: 137, vapp: 142 }, // ~ (based on E190)
+      "Q400":     { v1: 127, vr: 137, v2: 141, vref: 150, vapp: 155 }, // ~ (based on ATR-72)
+      "L-1011":   { v1: 152, vr: 162, v2: 166, vref: 156, vapp: 161 }, // ~ (based on B777)
+      "DC-10":    { v1: 152, vr: 162, v2: 166, vref: 156, vapp: 161 }, // ~ (based on B777)
+      "MD-11":    { v1: 152, vr: 162, v2: 166, vref: 156, vapp: 161 }, // ~ (based on B777)
+      "MD-90":    { v1: 142, vr: 152, v2: 156, vref: 143, vapp: 148 }, // ~ (based on B737)
+      "An-22":    { v1: 160, vr: 170, v2: 174, vref: 153, vapp: 158 }, // ~ (based on A380)
+      "An-225":   { v1: 170, vr: 180, v2: 184, vref: 163, vapp: 168 }, // ~
+      "Comet":    { v1: 141, vr: 151, v2: 155, vref: 143, vapp: 148 }, // ~
     };
 
     const depRunwayEl  = document.getElementById("dep-runway");
@@ -574,7 +577,12 @@
           el.textContent = `${values[i]} kts`;
           el.classList.remove("na");
         });
-        vspeedNoteEl.textContent = "Values are typical mid-weight approximations.";
+        const isEstimated = !["A220","A320","A330","A350","A380","B737","B747","B777","B787","ATR-72"].some(
+          a => a.toLowerCase() === aircraft.toLowerCase()
+        );
+        vspeedNoteEl.textContent = isEstimated
+          ? "~ Estimated values (aircraft not in ptfsperf dataset)."
+          : "* Data sourced from cityusergh.github.io/ptfsperf — V1 uses typical runway approximation.";
       } else {
         ids.forEach(id => {
           const el = document.getElementById(id);
