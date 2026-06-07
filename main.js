@@ -15,7 +15,6 @@ function createWindow() {
     x: 0,
     y: 0,
     frame: false,
-    alwaysOnTop: true,
     resizable: false,
     movable: false,
     skipTaskbar: false,
@@ -28,6 +27,9 @@ function createWindow() {
 
   win.loadFile('index.html');
   win.setAlwaysOnTop(true, 'screen-saver');
+  win.on('closed', () => {
+    win = null;
+  });
 }
 
 app.whenReady().then(createWindow);
@@ -37,6 +39,7 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.on('resize-window', (_event, expanded) => {
+  if (!win) return;
   const { width } = screen.getPrimaryDisplay().workAreaSize;
   win.setSize(width, expanded ? FULL_HEIGHT : BAR_HEIGHT);
 });
