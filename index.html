@@ -5,7 +5,117 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ATC24 Flight Plan Generator</title>
   <style>
-    /* styles added in Task 6 */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0d1117;
+      color: #e6edf3;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem 1rem;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: #58a6ff;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.03em;
+    }
+
+    #flight-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #8b949e;
+    }
+
+    input, select {
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.95rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus, select:focus {
+      border-color: #58a6ff;
+    }
+
+    select:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #output-section {
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    #output-section label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    #command-output {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: #3fb950;
+      word-break: break-all;
+      margin-bottom: 0.75rem;
+      min-height: 1.4em;
+    }
+
+    #copy-btn {
+      background-color: #238636;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.45rem 1.1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    #copy-btn:hover {
+      background-color: #2ea043;
+    }
+
+    @media (max-width: 500px) {
+      #flight-form {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
