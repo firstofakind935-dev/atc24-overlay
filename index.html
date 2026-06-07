@@ -141,6 +141,10 @@
         airportSelectEl.disabled = true;
         return;
       }
+      if (!AIRPORTS[region]) {
+        airportSelectEl.disabled = true;
+        return;
+      }
       AIRPORTS[region].forEach(airport => {
         const opt = document.createElement("option");
         opt.value = airport.icao;
