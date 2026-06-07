@@ -829,9 +829,9 @@
 
     function setExpanded(expanded) {
       isExpanded = expanded;
+      window.electronAPI?.resizeWindow(expanded);
       appPanel.style.display = expanded ? "block" : "none";
       barExpandBtn.textContent = expanded ? "▲" : "▼";
-      window.electronAPI?.resizeWindow(expanded);
     }
 
     function setBarPhase(newPhase) {
