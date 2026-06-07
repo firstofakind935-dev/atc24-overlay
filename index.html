@@ -81,7 +81,87 @@
     </div>
   </div>
   <script>
-    // JS added in Tasks 3–5
+    const AIRPORTS = {
+      "Cyprus": [
+        { name: "Barra Airport", icao: "IBAR" },
+        { name: "Henstridge Airfield", icao: "IHEN" },
+        { name: "Larnaca Intl.", icao: "ILAR" },
+        { name: "Paphos Intl.", icao: "IPAP" },
+      ],
+      "Grindavik": [
+        { name: "Keflavik Intl.", icao: "IKFL" },
+        { name: "Pingeyri Airport", icao: "ITEY" },
+      ],
+      "Izolirani": [
+        { name: "Al Najaf", icao: "IJAF" },
+        { name: "Izolirani Intl.", icao: "ZOL" },
+      ],
+      "Orenji": [
+        { name: "Bird Island Airfield", icao: "IBRD" },
+        { name: "Saba Airport", icao: "IDCS" },
+        { name: "Tokyo Intl.", icao: "ITKO" },
+      ],
+      "Perth": [
+        { name: "Lukla Airport", icao: "ILKL" },
+        { name: "Perth Intl.", icao: "IPPH" },
+      ],
+      "Rockford": [
+        { name: "Boltic Airfield", icao: "IBLT" },
+        { name: "Greater Rockford", icao: "IRFD" },
+        { name: "Mellor Intl.", icao: "IMLR" },
+        { name: "Training Centre", icao: "ITRC" },
+      ],
+      "Saint Barthelemy": [
+        { name: "Saint Barthelemy", icao: "IBTH" },
+        { name: "Skopelos Airfield", icao: "ISKP" },
+      ],
+      "Sauthamptona": [
+        { name: "Sauthamptona Airport", icao: "ISAU" },
+      ],
+      "Airbases": [
+        { name: "McConnell AFB", icao: "IIAB" },
+        { name: "Air Base Garry", icao: "IGAR" },
+        { name: "RAF Scampton", icao: "ISCM" },
+      ],
+    };
+
+    function populateRegions(selectEl) {
+      Object.keys(AIRPORTS).forEach(region => {
+        const opt = document.createElement("option");
+        opt.value = region;
+        opt.textContent = region;
+        selectEl.appendChild(opt);
+      });
+    }
+
+    function populateAirports(regionSelectEl, airportSelectEl) {
+      const region = regionSelectEl.value;
+      airportSelectEl.innerHTML = '<option value="">-- Select Airport --</option>';
+      if (!region) {
+        airportSelectEl.disabled = true;
+        return;
+      }
+      AIRPORTS[region].forEach(airport => {
+        const opt = document.createElement("option");
+        opt.value = airport.icao;
+        opt.textContent = `${airport.name} (${airport.icao})`;
+        airportSelectEl.appendChild(opt);
+      });
+      airportSelectEl.disabled = false;
+    }
+
+    const depRegionEl = document.getElementById("dep-region");
+    const depAirportEl = document.getElementById("dep-airport");
+    const arrRegionEl = document.getElementById("arr-region");
+    const arrAirportEl = document.getElementById("arr-airport");
+
+    populateRegions(depRegionEl);
+    populateRegions(arrRegionEl);
+
+    depRegionEl.addEventListener("change", () => populateAirports(depRegionEl, depAirportEl));
+    arrRegionEl.addEventListener("change", () => populateAirports(arrRegionEl, arrAirportEl));
+
+    // placeholders for Tasks 4–5
   </script>
 </body>
 </html>
