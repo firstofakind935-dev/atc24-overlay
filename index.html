@@ -111,6 +111,11 @@
       background-color: #2ea043;
     }
 
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
     #reset-btn {
       background-color: #21262d;
       color: #e6edf3;
@@ -120,7 +125,6 @@
       font-size: 0.9rem;
       cursor: pointer;
       transition: background-color 0.15s;
-      margin-left: 0.5rem;
     }
 
     #reset-btn:hover {
@@ -204,8 +208,10 @@
     <div id="output-section">
       <label>Generated Command</label>
       <div id="command-output"></div>
-      <button type="button" id="copy-btn">Copy</button>
-      <button type="button" id="reset-btn">Reset</button>
+      <div class="btn-row">
+        <button type="button" id="copy-btn">Copy</button>
+        <button type="button" id="reset-btn">Reset</button>
+      </div>
     </div>
   </div>
   <script>
