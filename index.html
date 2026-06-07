@@ -155,7 +155,8 @@
 
       <div class="field-group">
         <label for="aircraft">Aircraft</label>
-        <input type="text" id="aircraft" placeholder="e.g. A350" />
+        <input type="text" id="aircraft" placeholder="e.g. A350" list="aircraft-list" autocomplete="off" />
+        <datalist id="aircraft-list"></datalist>
       </div>
 
       <div class="field-group">
@@ -259,6 +260,39 @@
       ],
     };
 
+    const AIRCRAFT = [
+      // Airbus airliners
+      { name: "A220",      airliner: true },
+      { name: "A320",      airliner: true },
+      { name: "A330",      airliner: true },
+      { name: "A340",      airliner: true },
+      { name: "A350",      airliner: true },
+      { name: "A380",      airliner: true },
+      { name: "BelugaXL",  airliner: true },
+      // Boeing airliners
+      { name: "B707",      airliner: true },
+      { name: "B727",      airliner: true },
+      { name: "B737",      airliner: true },
+      { name: "B747",      airliner: true },
+      { name: "B757",      airliner: true },
+      { name: "B767",      airliner: true },
+      { name: "B777",      airliner: true },
+      { name: "B787",      airliner: true },
+      // Regional airliners
+      { name: "ATR-72",    airliner: true },
+      { name: "CRJ700",    airliner: true },
+      { name: "Q400",      airliner: true },
+      // Classic widebodies
+      { name: "L-1011",    airliner: true },
+      { name: "DC-10",     airliner: true },
+      { name: "MD-11",     airliner: true },
+      { name: "MD-90",     airliner: true },
+      // Antonov / misc
+      { name: "An-22",     airliner: true },
+      { name: "An-225",    airliner: true },
+      { name: "Comet",     airliner: true },
+    ];
+
     function populateRegions(selectEl) {
       Object.keys(AIRPORTS).forEach(region => {
         const opt = document.createElement("option");
@@ -353,6 +387,32 @@
 
     updateCommand();
 
+    // Populate aircraft datalist
+    const aircraftListEl = document.getElementById("aircraft-list");
+    AIRCRAFT.forEach(ac => {
+      const opt = document.createElement("option");
+      opt.value = ac.name;
+      aircraftListEl.appendChild(opt);
+    });
+
+    function isAirliner(value) {
+      return AIRCRAFT.some(ac => ac.airliner && ac.name.toLowerCase() === value.trim().toLowerCase());
+    }
+
+    function updateFlightRulesForAircraft() {
+      const vfrOption = flightRulesEl.querySelector('option[value="VFR"]');
+      if (isAirliner(aircraftEl.value)) {
+        flightRulesEl.value = "IFR";
+        vfrOption.disabled = true;
+      } else {
+        vfrOption.disabled = false;
+      }
+      updateCommand();
+    }
+
+    aircraftEl.addEventListener("input", updateFlightRulesForAircraft);
+    aircraftEl.addEventListener("change", updateFlightRulesForAircraft);
+
     const copyBtn = document.getElementById("copy-btn");
 
     copyBtn.addEventListener("click", () => {
@@ -376,6 +436,7 @@
       callsignEl.value = "";
       aircraftEl.value = "";
       flightRulesEl.value = "";
+      flightRulesEl.querySelector('option[value="VFR"]').disabled = false;
       depRegionEl.value = "";
       populateAirports(depRegionEl, depAirportEl);
       arrRegionEl.value = "";
