@@ -249,10 +249,12 @@
       airportSelectEl.innerHTML = '<option value="">-- Select Airport --</option>';
       if (!region) {
         airportSelectEl.disabled = true;
+        if (typeof updateCommand === "function") updateCommand();
         return;
       }
       if (!AIRPORTS[region]) {
         airportSelectEl.disabled = true;
+        if (typeof updateCommand === "function") updateCommand();
         return;
       }
       AIRPORTS[region].forEach(airport => {
@@ -262,6 +264,7 @@
         airportSelectEl.appendChild(opt);
       });
       airportSelectEl.disabled = false;
+      if (typeof updateCommand === "function") updateCommand();
     }
 
     const depRegionEl = document.getElementById("dep-region");
@@ -297,7 +300,24 @@
     }
 
     function updateCommand() {
-      commandOutputEl.textContent = buildCommand();
+      const ingameCallsign = ingameCallsignEl.value.trim();
+      const callsign = callsignEl.value.trim();
+      const aircraft = aircraftEl.value.trim();
+      const flightRules = flightRulesEl.value;
+      const departing = depAirportEl.value;
+      const arriving = arrAirportEl.value;
+      const flightLevel = flightLevelEl.value.trim();
+      const route = routeEl.value.trim();
+
+      const allFilled = ingameCallsign && callsign && aircraft && flightRules && departing && arriving && flightLevel && route;
+
+      if (!allFilled) {
+        commandOutputEl.textContent = "Fill in all fields to generate the command.";
+        commandOutputEl.style.color = "#8b949e";
+      } else {
+        commandOutputEl.textContent = buildCommand();
+        commandOutputEl.style.color = "#3fb950";
+      }
     }
 
     [ingameCallsignEl, callsignEl, aircraftEl, flightRulesEl,
@@ -312,14 +332,36 @@
     const copyBtn = document.getElementById("copy-btn");
 
     copyBtn.addEventListener("click", () => {
-      navigator.clipboard.writeText(buildCommand()).then(() => {
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
-      }).catch(() => {
-        copyBtn.textContent = "Failed!";
-        setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
-      });
+      const command = buildCommand();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(command).then(() => {
+          copyBtn.textContent = "Copied!";
+          setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+        }).catch(() => {
+          fallbackCopy(command);
+        });
+      } else {
+        fallbackCopy(command);
+      }
     });
+
+    function fallbackCopy(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand("copy");
+        copyBtn.textContent = "Copied!";
+      } catch (e) {
+        copyBtn.textContent = "Failed!";
+      }
+      document.body.removeChild(ta);
+      setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+    }
   </script>
 </body>
 </html>
