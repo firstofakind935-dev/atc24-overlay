@@ -17,14 +17,18 @@
       font-family: 'Segoe UI', system-ui, sans-serif;
       min-height: 100vh;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 2rem 1rem;
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+      overflow: hidden;
     }
 
     #app {
       width: 100%;
       max-width: 680px;
+      padding: 2rem 1rem;
+      display: none;
+      overflow-y: auto;
     }
 
     h1 {
@@ -210,6 +214,99 @@
       margin-top: 0.75rem;
     }
 
+    #bar {
+      width: 100%;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0 1rem;
+      background-color: #161b22;
+      border-bottom: 2px solid #30363d;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    #bar-phase-toggle {
+      display: flex;
+      gap: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    .phase-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .phase-btn.active {
+      background-color: #1f6feb;
+      border-color: #1f6feb;
+      color: #ffffff;
+    }
+
+    .phase-btn:hover:not(.active) {
+      border-color: #58a6ff;
+      color: #58a6ff;
+    }
+
+    #bar-aircraft {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #e6edf3;
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+
+    #bar-vspeeds {
+      display: flex;
+      gap: 1.5rem;
+      flex: 1;
+    }
+
+    .bar-vspeed {
+      display: flex;
+      align-items: baseline;
+      gap: 0.3rem;
+    }
+
+    .bar-vname {
+      font-size: 0.7rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      min-width: 2.2rem;
+    }
+
+    .bar-vval {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.95rem;
+      color: #3fb950;
+    }
+
+    #bar-expand-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      font-size: 0.85rem;
+      padding: 0.2rem 0.6rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-left: auto;
+      transition: all 0.15s;
+    }
+
+    #bar-expand-btn:hover {
+      border-color: #58a6ff;
+      color: #58a6ff;
+    }
+
     @media (max-width: 500px) {
       #flight-form,
       #vspeed-runway-inputs,
@@ -220,6 +317,19 @@
   </style>
 </head>
 <body>
+  <div id="bar">
+    <div id="bar-phase-toggle">
+      <button class="phase-btn active" id="phase-takeoff">🛫 TAKEOFF</button>
+      <button class="phase-btn" id="phase-landing">🛬 LANDING</button>
+    </div>
+    <div id="bar-aircraft">— No aircraft —</div>
+    <div id="bar-vspeeds">
+      <span class="bar-vspeed"><span class="bar-vname" id="bar-name1">V1</span><span class="bar-vval" id="bar-val1">—</span></span>
+      <span class="bar-vspeed"><span class="bar-vname" id="bar-name2">VR</span><span class="bar-vval" id="bar-val2">—</span></span>
+      <span class="bar-vspeed"><span class="bar-vname" id="bar-name3">V2</span><span class="bar-vval" id="bar-val3">—</span></span>
+    </div>
+    <button id="bar-expand-btn">▼</button>
+  </div>
   <div id="app">
     <h1>ATC24 Flight Plan Generator</h1>
     <form id="flight-form">
