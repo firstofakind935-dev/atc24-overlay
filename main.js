@@ -17,7 +17,7 @@ function createWindow() {
     frame: false,
     resizable: false,
     movable: false,
-    skipTaskbar: false,
+    skipTaskbar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -26,7 +26,7 @@ function createWindow() {
   });
 
   win.loadFile('index.html');
-  win.setAlwaysOnTop(true, 'screen-saver');
+  win.setAlwaysOnTop(true, 'pop-up-menu');
   win.on('closed', () => {
     win = null;
   });
@@ -40,6 +40,7 @@ app.on('window-all-closed', () => {
 
 ipcMain.on('resize-window', (_event, expanded) => {
   if (!win) return;
+  if (typeof expanded !== 'boolean') return;
   const { width } = screen.getPrimaryDisplay().workAreaSize;
   win.setSize(width, expanded ? FULL_HEIGHT : BAR_HEIGHT);
 });
