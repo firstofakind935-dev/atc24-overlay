@@ -75,9 +75,44 @@
     .tb-btn:hover { border-color: #58a6ff; color: #58a6ff; }
     #close-btn:hover { background: #da3633; border-color: #da3633; color: #fff; }
 
-    webview {
+    #tabbar {
+      display: flex;
+      background: #0d1117;
+      border-bottom: 1px solid #30363d;
+      padding: 0 12px;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      padding: 7px 16px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #8b949e;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      letter-spacing: 0.04em;
+      user-select: none;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .tab:hover { color: #e6edf3; }
+
+    .tab.active       { color: #58a6ff; border-bottom-color: #58a6ff; }
+    .tab.active.tcas  { color: #3fb950; border-bottom-color: #3fb950; }
+
+    #webview-container {
       flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #webview-container webview {
+      position: absolute;
+      top: 0; left: 0;
       width: 100%;
+      height: 100%;
       border: none;
     }
   </style>
@@ -91,7 +126,15 @@
     </div>
   </div>
 
-  <webview src="https://flighteye.org/flighteye/map" allowpopups></webview>
+  <div id="tabbar">
+    <div class="tab active" id="tab-fe" data-target="fe-webview">🗺 Flight Eye</div>
+    <div class="tab tcas"   id="tab-tc" data-target="tc-webview">🛡 TCAS — 24 Pilot</div>
+  </div>
+
+  <div id="webview-container">
+    <webview id="fe-webview" src="https://flighteye.org/flighteye/map" allowpopups></webview>
+    <webview id="tc-webview" src="https://24pilot.ptfsrp.com/" allowpopups style="display:none"></webview>
+  </div>
 
   <script>
     document.getElementById('min-btn').addEventListener('click', () => {
@@ -99,6 +142,21 @@
     });
     document.getElementById('close-btn').addEventListener('click', () => {
       window.close();
+    });
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetId = tab.dataset.target;
+
+        // Deactivate all tabs
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Show target webview, hide others
+        document.querySelectorAll('#webview-container webview').forEach(wv => {
+          wv.style.display = wv.id === targetId ? 'block' : 'none';
+        });
+      });
     });
   </script>
 </body>
