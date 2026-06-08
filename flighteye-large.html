@@ -114,6 +114,10 @@
       min-height: 0;
       border: none;
     }
+
+    #webview-container webview.hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -132,7 +136,7 @@
 
   <div id="webview-container">
     <webview id="fe-webview" src="https://flighteye.org/flighteye/map" allowpopups></webview>
-    <webview id="tc-webview" src="https://24pilot.ptfsrp.com/" allowpopups style="display:none"></webview>
+    <webview id="tc-webview" src="https://24pilot.ptfsrp.com/" allowpopups class="hidden"></webview>
   </div>
 
   <script>
@@ -153,7 +157,7 @@
 
         // Show target webview, hide others
         document.querySelectorAll('#webview-container webview').forEach(wv => {
-          wv.style.display = wv.id === targetId ? 'block' : 'none';
+          wv.classList.toggle('hidden', wv.id !== targetId);
         });
       });
     });
