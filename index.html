@@ -11,6 +11,27 @@
       padding: 0;
     }
 
+    /* ── Keyframes ─────────────────────────────────────── */
+    @keyframes barSlideIn {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    @keyframes pillPop {
+      from { opacity: 0; transform: scale(0.5); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes pillFade {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0; transform: scale(0.7); }
+    }
+
+    @keyframes vFlash {
+      0%   { color: #3fb950; text-shadow: 0 0 10px rgba(63, 185, 80, 0.7); }
+      100% { color: #e6edf3; text-shadow: none; }
+    }
+
     body {
       background-color: transparent;
       color: #e6edf3;
@@ -25,13 +46,32 @@
     #app {
       width: 100%;
       max-width: 680px;
-      padding: 2rem 1rem;
-      display: none;
-      overflow-y: auto;
-      max-height: calc(820px - 52px);
+      padding: 0 1rem;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transform: translateY(-10px);
       background-color: #0d1117;
       border-radius: 0 0 8px 8px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.3s ease,
+                  transform 0.3s ease,
+                  padding 0.3s ease;
+    }
+
+    #app.open {
+      max-height: calc(820px - 52px);
+      opacity: 1;
+      overflow-y: auto;
+      pointer-events: auto;
+      transform: translateY(0);
+      padding: 2rem 1rem;
+    }
+
+    .vspeed-flash {
+      animation: vFlash 0.7s ease forwards;
     }
 
     h1 {
@@ -227,6 +267,7 @@
       background: rgba(13, 17, 23, 0.45);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
+      animation: barSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
       border-bottom: 1px solid rgba(48, 54, 61, 0.5);
       flex-shrink: 0;
       user-select: none;
@@ -348,6 +389,46 @@
       color: #e3b341;
     }
 
+    #bar-flighteye-btn {
+      background: none;
+      border: 1px solid #3fb950;
+      border-radius: 4px;
+      color: #3fb950;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      height: 28px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+      transition: all 0.15s;
+    }
+
+    #bar-flighteye-btn:hover {
+      background-color: #3fb950;
+      color: #0d1117;
+    }
+
+    #bar-femap-btn {
+      background: none;
+      border: 1px solid #388bfd;
+      border-radius: 4px;
+      color: #388bfd;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      height: 28px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+      transition: all 0.15s;
+    }
+
+    #bar-femap-btn:hover {
+      background-color: #388bfd;
+      color: #ffffff;
+    }
+
     #bar-pill {
       display: none;
       position: fixed;
@@ -362,9 +443,12 @@
       padding: 0.3rem 0.8rem;
       cursor: pointer;
       user-select: none;
-      transition: all 0.15s;
+      transition: background-color 0.15s, border-color 0.15s;
       z-index: 999;
     }
+
+    #bar-pill.popping-in  { animation: pillPop  0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    #bar-pill.popping-out { animation: pillFade 0.2s ease forwards; }
 
     #bar-pill:hover {
       background-color: #1f6feb;
@@ -392,6 +476,8 @@
       <span class="bar-vspeed"><span class="bar-vname" id="bar-name2">VR</span><span class="bar-vval" id="bar-val2">—</span></span>
       <span class="bar-vspeed"><span class="bar-vname" id="bar-name3">V2</span><span class="bar-vval" id="bar-val3">—</span></span>
     </div>
+    <button id="bar-flighteye-btn" title="Toggle small Flight Eye widget">👁 Flight Eye</button>
+    <button id="bar-femap-btn" title="Toggle large Flight Eye map">🗺 Large Map</button>
     <button id="bar-expand-btn">▼</button>
     <button id="bar-shrink-btn" title="Minimise to pill">⊟</button>
     <button id="bar-close-btn" title="Close overlay">✕</button>
@@ -601,8 +687,8 @@
       }
       AIRPORTS[region].forEach(airport => {
         const opt = document.createElement("option");
-        opt.value = airport.icao;
-        opt.textContent = `${airport.name} (${airport.icao})`;
+        opt.value = airport.name;
+        opt.textContent = airport.name;
         airportSelectEl.appendChild(opt);
       });
       airportSelectEl.disabled = false;
@@ -873,12 +959,14 @@
         barVal2El.textContent = speeds ? `${speeds.vref} kts` : "—";
         barVal3El.textContent = "";
       }
-    }
 
-    function setExpanded(expanded) {
-      isExpanded = expanded;
-      appPanel.style.display = expanded ? "block" : "none";
-      barExpandBtn.textContent = expanded ? "▲" : "▼";
+      if (speeds) {
+        [barVal1El, barVal2El, barVal3El].forEach(el => {
+          el.classList.remove("vspeed-flash");
+          void el.offsetWidth;
+          el.classList.add("vspeed-flash");
+        });
+      }
     }
 
     // Click-through: transparent areas pass clicks to the game, interactive areas receive them
@@ -903,21 +991,43 @@
     const barEl   = document.getElementById("bar");
 
     document.getElementById("bar-shrink-btn").addEventListener("click", () => {
-      barEl.style.display  = "none";
-      appPanel.style.display = "none";
-      barPill.style.display  = "block";
-      isExpanded = false;
-      barExpandBtn.textContent = "▼";
+      setExpanded(false);
+      barEl.style.display   = "none";
+      barPill.style.display = "block";
+      barPill.classList.remove("popping-in", "popping-out");
+      void barPill.offsetWidth; // force reflow so animation restarts
+      barPill.classList.add("popping-in");
+      window.electronAPI?.hideFlightEyeWindows();
     });
 
     barPill.addEventListener("click", () => {
-      barEl.style.display  = "flex";
-      barPill.style.display = "none";
+      barPill.classList.remove("popping-in");
+      barPill.classList.add("popping-out");
+      barPill.addEventListener("animationend", () => {
+        barPill.style.display = "none";
+        barPill.classList.remove("popping-out");
+        barEl.style.display   = "flex";
+        window.electronAPI?.restoreFlightEyeWindows();
+      }, { once: true });
     });
 
     document.getElementById("bar-close-btn").addEventListener("click", () => {
       window.electronAPI?.closeWindow();
     });
+
+    document.getElementById("bar-flighteye-btn").addEventListener("click", () => {
+      window.electronAPI?.toggleFlightEye();
+    });
+
+    document.getElementById("bar-femap-btn").addEventListener("click", () => {
+      window.electronAPI?.toggleFlightEyeLarge();
+    });
+
+    function setExpanded(expanded) {
+      isExpanded = expanded;
+      appPanel.classList.toggle("open", expanded);
+      barExpandBtn.textContent = expanded ? "▲" : "▼";
+    }
     aircraftEl.addEventListener("input",  updateBar);
     aircraftEl.addEventListener("change", updateBar);
     callsignEl.addEventListener("input",  updateBar);

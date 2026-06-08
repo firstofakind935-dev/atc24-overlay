@@ -3,10 +3,28 @@
   "version": "1.0.0",
   "description": "ATC24 Flight Plan Generator Overlay",
   "main": "main.js",
+  "author": "nilam",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.nilam.atc24overlay",
+    "productName": "ATC24 Overlay",
+    "asar": false,
+    "files": [
+      "index.html",
+      "main.js",
+      "preload.js",
+      "icon.png"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "icon.png"
+    }
   },
   "devDependencies": {
-    "electron": "^42.3.3"
+    "electron": "^42.3.3",
+    "electron-builder": "^25.1.8"
   }
 }

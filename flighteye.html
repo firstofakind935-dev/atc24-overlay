@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #0d1117;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      animation: fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    #titlebar {
+      height: 30px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+
+    #titlebar-label {
+      color: #58a6ff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #titlebar-buttons {
+      display: flex;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+    }
+
+    .tb-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 12px;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .tb-btn:hover { border-color: #58a6ff; color: #58a6ff; }
+    #close-btn:hover { background: #da3633; border-color: #da3633; color: #fff; }
+
+    webview {
+      flex: 1;
+      width: 100%;
+      border: none;
+    }
+
+    #resize-handle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 14px;
+      height: 14px;
+      cursor: se-resize;
+      opacity: 0.4;
+      background: linear-gradient(135deg, transparent 50%, #58a6ff 50%);
+    }
+  </style>
+</head>
+<body>
+  <div id="titlebar">
+    <span id="titlebar-label">👁 Flight Eye</span>
+    <div id="titlebar-buttons">
+      <button class="tb-btn" id="min-btn" title="Minimise">—</button>
+      <button class="tb-btn" id="close-btn" title="Hide">✕</button>
+    </div>
+  </div>
+
+  <webview src="https://flighteye.org/flighteye/map" allowpopups></webview>
+
+  <div id="resize-handle"></div>
+
+  <script>
+    document.getElementById('min-btn').addEventListener('click', () => {
+      window.minimize();
+    });
+    document.getElementById('close-btn').addEventListener('click', () => {
+      window.close();
+    });
+  </script>
+</body>
+</html>
