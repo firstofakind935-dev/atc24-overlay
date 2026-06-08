@@ -1,0 +1,87 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx @electron/packager . "ATC24 Overlay" --platform=win32 --arch=x64 --out=dist --overwrite --ignore="dist|\.git|docs"
+      - name: Zip Windows build
+        run: Compress-Archive -Path "dist/ATC24 Overlay-win32-x64" -DestinationPath "ATC24-Overlay-Windows.zip"
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: ATC24-Overlay-Windows.zip
+
+  build-mac-intel:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx @electron/packager . "ATC24 Overlay" --platform=darwin --arch=x64 --out=dist --overwrite --ignore="dist|\.git|docs"
+      - name: Zip Mac Intel build
+        run: zip -r ATC24-Overlay-Mac-Intel.zip "dist/ATC24 Overlay-darwin-x64"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-intel
+          path: ATC24-Overlay-Mac-Intel.zip
+
+  build-mac-silicon:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx @electron/packager . "ATC24 Overlay" --platform=darwin --arch=arm64 --out=dist --overwrite --ignore="dist|\.git|docs"
+      - name: Zip Mac Silicon build
+        run: zip -r ATC24-Overlay-Mac-Silicon.zip "dist/ATC24 Overlay-darwin-arm64"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac-silicon
+          path: ATC24-Overlay-Mac-Silicon.zip
+
+  release:
+    needs: [build-windows, build-mac-intel, build-mac-silicon]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || 'v1.1.0' }}
+          name: ATC24 Overlay ${{ github.ref_name || 'v1.1.0' }}
+          body: |
+            ## Download
+            | Platform | File |
+            |---|---|
+            | Windows | `ATC24-Overlay-Windows.zip` |
+            | Mac (Intel) | `ATC24-Overlay-Mac-Intel.zip` |
+            | Mac (Apple Silicon M1/M2/M3) | `ATC24-Overlay-Mac-Silicon.zip` |
+
+            Extract the zip and run the app inside.
+
+            > **Mac users:** Right-click the app → Open the first time to bypass Gatekeeper.
+          files: |
+            ATC24-Overlay-Windows.zip
+            ATC24-Overlay-Mac-Intel.zip
+            ATC24-Overlay-Mac-Silicon.zip
