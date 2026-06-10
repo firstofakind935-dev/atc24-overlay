@@ -429,6 +429,26 @@
       color: #ffffff;
     }
 
+    #bar-checklist-btn {
+      background: none;
+      border: 1px solid #e3b341;
+      border-radius: 4px;
+      color: #e3b341;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      height: 28px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+      transition: all 0.15s;
+    }
+
+    #bar-checklist-btn:hover {
+      background-color: #e3b341;
+      color: #0d1117;
+    }
+
     #bar-pill {
       display: none;
       position: fixed;
@@ -478,6 +498,7 @@
     </div>
     <button id="bar-flighteye-btn" title="Toggle small Flight Eye widget">👁 Flight Eye</button>
     <button id="bar-femap-btn" title="Toggle large Flight Eye map">🗺 Large Map</button>
+    <button id="bar-checklist-btn" title="Toggle checklist">📋 Checklist</button>
     <button id="bar-expand-btn">▼</button>
     <button id="bar-shrink-btn" title="Minimise to pill">⊟</button>
     <button id="bar-close-btn" title="Close overlay">✕</button>
@@ -1021,6 +1042,10 @@
 
     document.getElementById("bar-femap-btn").addEventListener("click", () => {
       window.electronAPI?.toggleFlightEyeLarge();
+    });
+
+    document.getElementById("bar-checklist-btn").addEventListener("click", () => {
+      window.electronAPI?.toggleChecklist();
     });
 
     function setExpanded(expanded) {

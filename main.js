@@ -11,6 +11,7 @@ const BAR_HEIGHT      = 52;
 let win;
 let feWin;
 let feLargeWin;
+let clWin;
 
 // ─── Persistent bounds ────────────────────────────────────────────────────────
 let settingsPath;
@@ -100,6 +101,37 @@ function createFlightEyeLargeWindow() {
   feLargeWin.on('closed', () => { feLargeWin = null; });
 }
 
+// ─── Checklist popup ─────────────────────────────────────────────────────────
+function createChecklistWindow() {
+  const { width } = screen.getPrimaryDisplay().workAreaSize;
+  const def = { width: 300, height: 490, x: width - 320, y: 60 };
+  const b = getBounds('checklist', def);
+
+  clWin = new BrowserWindow({
+    width: b.width, height: b.height, x: b.x, y: b.y,
+    frame: false, transparent: false,
+    resizable: true, movable: true,
+    skipTaskbar: true, hasShadow: true,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
+
+  clWin.loadFile('checklist.html');
+  clWin.setAlwaysOnTop(true, 'pop-up-menu');
+
+  clWin.on('resize', () => saveBoundsOf('checklist', clWin));
+  clWin.on('move',   () => saveBoundsOf('checklist', clWin));
+  clWin.on('minimize', () => {
+    saveBoundsOf('checklist', clWin);
+    clWin.hide();
+  });
+  clWin.on('close', (e) => {
+    e.preventDefault();
+    saveBoundsOf('checklist', clWin);
+    clWin.hide();
+  });
+  clWin.on('closed', () => { clWin = null; });
+}
+
 // ─── Main overlay ─────────────────────────────────────────────────────────────
 function createWindow() {
   const { width } = screen.getPrimaryDisplay().workAreaSize;
@@ -165,6 +197,16 @@ ipcMain.on('toggle-flighteye', () => {
   if (feLargeWin && feLargeWin.isVisible()) feLargeWin.hide();
   if (!feWin) { createFlightEyeWindow(); return; }
   if (feWin.isVisible()) feWin.hide(); else feWin.show();
+});
+
+ipcMain.on('toggle-checklist', () => {
+  if (!clWin) { createChecklistWindow(); return; }
+  if (clWin.isVisible()) {
+    saveBoundsOf('checklist', clWin);
+    clWin.hide();
+  } else {
+    clWin.show();
+  }
 });
 
 // Toggle large — also hides small; restores small when large closes

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes checkPop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.35); }
+      100% { transform: scale(1); }
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #0d1117;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #e6edf3;
+      animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* ── Title bar ── */
+    #titlebar {
+      height: 34px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+
+    #titlebar-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #e3b341;
+    }
+
+    #titlebar-right {
+      display: flex;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+    }
+
+    .tb-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 2px 7px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .tb-btn:hover          { border-color: #e3b341; color: #e3b341; }
+    #close-btn:hover       { background: #da3633; border-color: #da3633; color: #fff; }
+    #reset-all-btn:hover   { border-color: #8b949e; color: #8b949e; }
+
+    /* ── Phase tabs ── */
+    #phase-tabs {
+      display: flex;
+      background: #0d1117;
+      border-bottom: 1px solid #30363d;
+      padding: 0 8px;
+      gap: 2px;
+      flex-shrink: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    #phase-tabs::-webkit-scrollbar { display: none; }
+
+    .ph-tab {
+      padding: 6px 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #8b949e;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      letter-spacing: 0.04em;
+      user-select: none;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .ph-tab:hover { color: #e6edf3; }
+    .ph-tab.active { color: #e3b341; border-bottom-color: #e3b341; }
+
+    /* ── Phase progress bar ── */
+    #phase-progress {
+      height: 3px;
+      background: #21262d;
+      flex-shrink: 0;
+    }
+
+    #phase-progress-fill {
+      height: 100%;
+      background: #e3b341;
+      transition: width 0.3s ease;
+    }
+
+    /* ── Checklist content ── */
+    #checklist-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+    }
+
+    #checklist-content::-webkit-scrollbar       { width: 4px; }
+    #checklist-content::-webkit-scrollbar-track  { background: transparent; }
+    #checklist-content::-webkit-scrollbar-thumb  { background: #30363d; border-radius: 2px; }
+
+    .phase-panel { display: none; }
+    .phase-panel.active { display: block; }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.12s;
+      border-bottom: 1px solid #161b22;
+    }
+
+    .checklist-item:last-child { border-bottom: none; }
+
+    .checklist-item:hover { background: #161b22; }
+
+    .checklist-item.checked {
+      opacity: 0.45;
+    }
+
+    .checklist-item.checked .item-label {
+      text-decoration: line-through;
+      color: #8b949e;
+    }
+
+    .item-box {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid #30363d;
+      border-radius: 3px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .checklist-item.checked .item-box {
+      background: #e3b341;
+      border-color: #e3b341;
+      animation: checkPop 0.2s ease;
+    }
+
+    .item-check-icon {
+      color: #0d1117;
+      font-size: 10px;
+      font-weight: 900;
+      opacity: 0;
+      transition: opacity 0.1s;
+    }
+
+    .checklist-item.checked .item-check-icon { opacity: 1; }
+
+    .item-label {
+      font-size: 0.82rem;
+      color: #e6edf3;
+      line-height: 1.3;
+    }
+
+    /* ── Footer ── */
+    #footer {
+      padding: 8px 12px;
+      border-top: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: #0d1117;
+    }
+
+    #phase-count {
+      font-size: 0.72rem;
+      color: #8b949e;
+      letter-spacing: 0.03em;
+    }
+
+    #phase-count span { color: #e3b341; font-weight: 600; }
+
+    #reset-phase-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 0.72rem;
+      padding: 3px 9px;
+      transition: all 0.15s;
+    }
+
+    #reset-phase-btn:hover { border-color: #e3b341; color: #e3b341; }
+  </style>
+</head>
+<body>
+  <div id="titlebar">
+    <span id="titlebar-label">📋 Checklist</span>
+    <div id="titlebar-right">
+      <button class="tb-btn" id="reset-all-btn" title="Reset all phases">↺ All</button>
+      <button class="tb-btn" id="min-btn">—</button>
+      <button class="tb-btn" id="close-btn">✕</button>
+    </div>
+  </div>
+
+  <div id="phase-tabs">
+    <div class="ph-tab active" data-phase="startup">⚙ Startup</div>
+    <div class="ph-tab" data-phase="taxi">🚕 Taxi</div>
+    <div class="ph-tab" data-phase="takeoff">🛫 Takeoff</div>
+    <div class="ph-tab" data-phase="cruise">✈ Cruise</div>
+    <div class="ph-tab" data-phase="landing">🛬 Landing</div>
+    <div class="ph-tab" data-phase="shutdown">🔴 Shutdown</div>
+  </div>
+
+  <div id="phase-progress"><div id="phase-progress-fill" style="width:0%"></div></div>
+
+  <div id="checklist-content">
+
+    <div class="phase-panel active" id="panel-startup">
+      <div class="checklist-item" data-id="su-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Parking brake — SET</span></div>
+      <div class="checklist-item" data-id="su-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Battery / APU — ON</span></div>
+      <div class="checklist-item" data-id="su-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Beacon light — ON</span></div>
+      <div class="checklist-item" data-id="su-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Engine 1 — START</span></div>
+      <div class="checklist-item" data-id="su-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Engine 2 — START</span></div>
+      <div class="checklist-item" data-id="su-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Hydraulics — CHECK</span></div>
+      <div class="checklist-item" data-id="su-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Transponder — STBY</span></div>
+      <div class="checklist-item" data-id="su-8"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Request clearance (IFR/VFR)</span></div>
+      <div class="checklist-item" data-id="su-9"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Request pushback clearance</span></div>
+    </div>
+
+    <div class="phase-panel" id="panel-taxi">
+      <div class="checklist-item" data-id="tx-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Parking brake — RELEASE</span></div>
+      <div class="checklist-item" data-id="tx-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Taxi lights — ON</span></div>
+      <div class="checklist-item" data-id="tx-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Brakes — CHECK</span></div>
+      <div class="checklist-item" data-id="tx-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Flaps — SET for takeoff</span></div>
+      <div class="checklist-item" data-id="tx-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Transponder — TA/RA</span></div>
+      <div class="checklist-item" data-id="tx-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">V-speeds — NOTE (V1 / VR / V2)</span></div>
+      <div class="checklist-item" data-id="tx-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Hold-short — COMPLY</span></div>
+    </div>
+
+    <div class="phase-panel" id="panel-takeoff">
+      <div class="checklist-item" data-id="to-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Takeoff clearance — RECEIVED</span></div>
+      <div class="checklist-item" data-id="to-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing lights — ON</span></div>
+      <div class="checklist-item" data-id="to-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Throttle to takeoff power</span></div>
+      <div class="checklist-item" data-id="to-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">V1 — CALLED</span></div>
+      <div class="checklist-item" data-id="to-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">VR — ROTATE</span></div>
+      <div class="checklist-item" data-id="to-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Positive rate — GEAR UP</span></div>
+      <div class="checklist-item" data-id="to-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Flaps — RETRACT (schedule)</span></div>
+      <div class="checklist-item" data-id="to-8"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Contact departure frequency</span></div>
+    </div>
+
+    <div class="phase-panel" id="panel-cruise">
+      <div class="checklist-item" data-id="cr-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Cruise altitude — REACHED</span></div>
+      <div class="checklist-item" data-id="cr-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Autopilot — ENGAGED</span></div>
+      <div class="checklist-item" data-id="cr-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing lights — OFF</span></div>
+      <div class="checklist-item" data-id="cr-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Contact center frequency</span></div>
+      <div class="checklist-item" data-id="cr-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Fuel — MONITOR</span></div>
+      <div class="checklist-item" data-id="cr-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Check destination ATIS / weather</span></div>
+      <div class="checklist-item" data-id="cr-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Descent plan — REVIEWED</span></div>
+    </div>
+
+    <div class="phase-panel" id="panel-landing">
+      <div class="checklist-item" data-id="la-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Request descent clearance</span></div>
+      <div class="checklist-item" data-id="la-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Autopilot — MANAGED DESCENT</span></div>
+      <div class="checklist-item" data-id="la-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing lights — ON</span></div>
+      <div class="checklist-item" data-id="la-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Flaps — SET approach</span></div>
+      <div class="checklist-item" data-id="la-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Speed — Vapp CHECK</span></div>
+      <div class="checklist-item" data-id="la-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Gear — DOWN & LOCKED</span></div>
+      <div class="checklist-item" data-id="la-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Autobrake / spoilers — ARMED</span></div>
+      <div class="checklist-item" data-id="la-8"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing clearance — RECEIVED</span></div>
+    </div>
+
+    <div class="phase-panel" id="panel-shutdown">
+      <div class="checklist-item" data-id="sd-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Runway — CLEAR (exit at first)</span></div>
+      <div class="checklist-item" data-id="sd-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing lights — OFF</span></div>
+      <div class="checklist-item" data-id="sd-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Request taxi to gate</span></div>
+      <div class="checklist-item" data-id="sd-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Taxi lights — OFF at gate</span></div>
+      <div class="checklist-item" data-id="sd-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Parking brake — SET</span></div>
+      <div class="checklist-item" data-id="sd-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Engine 1 — SHUTDOWN</span></div>
+      <div class="checklist-item" data-id="sd-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Engine 2 — SHUTDOWN</span></div>
+      <div class="checklist-item" data-id="sd-8"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Transponder — STBY / OFF</span></div>
+      <div class="checklist-item" data-id="sd-9"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Systems — ALL OFF</span></div>
+    </div>
+
+  </div>
+
+  <div id="footer">
+    <span id="phase-count"><span id="count-done">0</span> / <span id="count-total">0</span> complete</span>
+    <button id="reset-phase-btn">↺ Reset phase</button>
+  </div>
+
+  <script>
+    const PHASES = ['startup', 'taxi', 'takeoff', 'cruise', 'landing', 'shutdown'];
+    let currentPhase = 'startup';
+
+    // Load state from localStorage
+    const state = JSON.parse(localStorage.getItem('cl-state') || '{}');
+
+    function saveState() {
+      localStorage.setItem('cl-state', JSON.stringify(state));
+    }
+
+    function getPhaseItems(phase) {
+      return document.querySelectorAll(`#panel-${phase} .checklist-item`);
+    }
+
+    function updateProgress() {
+      const items = getPhaseItems(currentPhase);
+      const total = items.length;
+      const done  = [...items].filter(i => i.classList.contains('checked')).length;
+      document.getElementById('count-done').textContent  = done;
+      document.getElementById('count-total').textContent = total;
+      document.getElementById('phase-progress-fill').style.width =
+        total ? `${(done / total) * 100}%` : '0%';
+    }
+
+    function applyState() {
+      document.querySelectorAll('.checklist-item').forEach(item => {
+        const id = item.dataset.id;
+        item.classList.toggle('checked', !!state[id]);
+      });
+      updateProgress();
+    }
+
+    function switchPhase(phase) {
+      currentPhase = phase;
+      document.querySelectorAll('.ph-tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.phase === phase));
+      document.querySelectorAll('.phase-panel').forEach(p =>
+        p.classList.toggle('active', p.id === `panel-${phase}`));
+      updateProgress();
+    }
+
+    // Tab clicks
+    document.querySelectorAll('.ph-tab').forEach(tab => {
+      tab.addEventListener('click', () => switchPhase(tab.dataset.phase));
+    });
+
+    // Item clicks
+    document.querySelectorAll('.checklist-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.id;
+        state[id] = !state[id];
+        item.classList.toggle('checked', state[id]);
+        saveState();
+        updateProgress();
+      });
+    });
+
+    // Reset current phase
+    document.getElementById('reset-phase-btn').addEventListener('click', () => {
+      getPhaseItems(currentPhase).forEach(item => {
+        state[item.dataset.id] = false;
+        item.classList.remove('checked');
+      });
+      saveState();
+      updateProgress();
+    });
+
+    // Reset all phases
+    document.getElementById('reset-all-btn').addEventListener('click', () => {
+      document.querySelectorAll('.checklist-item').forEach(item => {
+        state[item.dataset.id] = false;
+        item.classList.remove('checked');
+      });
+      saveState();
+      updateProgress();
+    });
+
+    // Window buttons
+    document.getElementById('min-btn').addEventListener('click', () => window.minimize());
+    document.getElementById('close-btn').addEventListener('click', () => window.close());
+
+    // Init
+    applyState();
+  </script>
+</body>
+</html>

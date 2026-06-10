@@ -6,6 +6,7 @@ try {
     closeWindow: () => ipcRenderer.send('close-window'),
     toggleFlightEye: () => ipcRenderer.send('toggle-flighteye'),
     toggleFlightEyeLarge: () => ipcRenderer.send('toggle-flighteye-large'),
+    toggleChecklist: () => ipcRenderer.send('toggle-checklist'),
     hideFlightEyeWindows: () => ipcRenderer.send('hide-flighteye-windows'),
     restoreFlightEyeWindows: () => ipcRenderer.send('restore-flighteye-windows'),
   });
