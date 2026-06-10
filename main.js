@@ -156,11 +156,11 @@ function createWindow() {
 app.whenReady().then(() => {
   initSettings();
   createWindow();
-  createFlightEyeWindow();
 });
 
 app.on('window-all-closed', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
+  if (clWin)      { clWin.removeAllListeners('close');      clWin.close(); }
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -188,6 +188,7 @@ ipcMain.on('restore-flighteye-windows', () => {
 
 ipcMain.on('close-window', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
+  if (clWin)      { clWin.removeAllListeners('close');      clWin.close(); }
   if (feWin)  feWin.close();
   if (win)    win.close();
 });
