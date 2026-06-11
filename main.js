@@ -12,6 +12,7 @@ let win;
 let feWin;
 let feLargeWin;
 let clWin;
+let spWin;
 
 // ─── Persistent bounds ────────────────────────────────────────────────────────
 let settingsPath;
@@ -101,6 +102,37 @@ function createFlightEyeLargeWindow() {
   feLargeWin.on('closed', () => { feLargeWin = null; });
 }
 
+// ─── Scratchpad popup ────────────────────────────────────────────────────────
+function createScratchpadWindow() {
+  const { width } = screen.getPrimaryDisplay().workAreaSize;
+  const def = { width: 420, height: 340, x: Math.round(width / 2 - 210), y: 60 };
+  const b = getBounds('scratchpad', def);
+
+  spWin = new BrowserWindow({
+    width: b.width, height: b.height, x: b.x, y: b.y,
+    frame: false, transparent: false,
+    resizable: true, movable: true,
+    skipTaskbar: true, hasShadow: true,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  });
+
+  spWin.loadFile('scratchpad.html');
+  spWin.setAlwaysOnTop(true, 'pop-up-menu');
+
+  spWin.on('resize', () => saveBoundsOf('scratchpad', spWin));
+  spWin.on('move',   () => saveBoundsOf('scratchpad', spWin));
+  spWin.on('minimize', () => {
+    saveBoundsOf('scratchpad', spWin);
+    spWin.hide();
+  });
+  spWin.on('close', (e) => {
+    e.preventDefault();
+    saveBoundsOf('scratchpad', spWin);
+    spWin.hide();
+  });
+  spWin.on('closed', () => { spWin = null; });
+}
+
 // ─── Checklist popup ─────────────────────────────────────────────────────────
 function createChecklistWindow() {
   const { width } = screen.getPrimaryDisplay().workAreaSize;
@@ -161,6 +193,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
   if (clWin)      { clWin.removeAllListeners('close');      clWin.close(); }
+  if (spWin)      { spWin.removeAllListeners('close');      spWin.close(); }
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -189,6 +222,7 @@ ipcMain.on('restore-flighteye-windows', () => {
 ipcMain.on('close-window', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
   if (clWin)      { clWin.removeAllListeners('close');      clWin.close(); }
+  if (spWin)      { spWin.removeAllListeners('close');      spWin.close(); }
   if (feWin)  feWin.close();
   if (win)    win.close();
 });
@@ -198,6 +232,16 @@ ipcMain.on('toggle-flighteye', () => {
   if (feLargeWin && feLargeWin.isVisible()) feLargeWin.hide();
   if (!feWin) { createFlightEyeWindow(); return; }
   if (feWin.isVisible()) feWin.hide(); else feWin.show();
+});
+
+ipcMain.on('toggle-scratchpad', () => {
+  if (!spWin) { createScratchpadWindow(); return; }
+  if (spWin.isVisible()) {
+    saveBoundsOf('scratchpad', spWin);
+    spWin.hide();
+  } else {
+    spWin.show();
+  }
 });
 
 ipcMain.on('toggle-checklist', () => {
