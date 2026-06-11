@@ -403,6 +403,67 @@
       letter-spacing: 0.02em;
     }
 
+    /* Dispatch release */
+    .ds-fuel {
+      margin-top: 6px;
+      border: 1px solid #d0cfc8;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .fuel-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 9px;
+      font-size: 0.72rem;
+      border-bottom: 1px dashed #e0dfd8;
+    }
+    .fuel-row:last-child { border-bottom: none; }
+    .fuel-row.head {
+      background: #ecebe4;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.56rem;
+      letter-spacing: 0.1em;
+      color: #888;
+      text-transform: uppercase;
+    }
+    .fuel-row.total {
+      background: #ecebe4;
+      font-weight: 900;
+    }
+    .ds-release-text {
+      margin-top: 9px;
+      font-size: 0.62rem;
+      line-height: 1.65;
+      color: #444;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      letter-spacing: 0.02em;
+      text-align: justify;
+    }
+    .ds-signs {
+      display: flex;
+      gap: 28px;
+      margin-top: 13px;
+    }
+    .ds-sign { flex: 1; }
+    .sig {
+      font-family: 'Segoe Script', 'Brush Script MT', cursive;
+      border-bottom: 1px solid #999;
+      padding-bottom: 2px;
+      font-size: 0.92rem;
+      color: #1a3a8f;
+      min-height: 1.3em;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .sig-label {
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin-top: 3px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
     /* Command block */
     .ds-cmd {
       padding: 10px 16px;
@@ -700,6 +761,34 @@
           <div class="ds-fpl" id="ds-fpl">—</div>
         </div>
 
+        <div class="ds-block">
+          <span class="ds-label">Dispatch Release — Fuel (kg)</span>
+          <div class="ds-fuel">
+            <div class="fuel-row head"><span>Item</span><span>Fuel</span></div>
+            <div class="fuel-row"><span>TRIP</span><span id="fu-trip">—</span></div>
+            <div class="fuel-row"><span>CONTINGENCY 10%</span><span id="fu-cont">—</span></div>
+            <div class="fuel-row"><span>ALTERNATE</span><span id="fu-altn">—</span></div>
+            <div class="fuel-row"><span>FINAL RESERVE</span><span id="fu-res">—</span></div>
+            <div class="fuel-row total"><span>BLOCK FUEL</span><span id="fu-block">—</span></div>
+          </div>
+          <p class="ds-release-text">
+            DISPATCH RELEASE — I HEREBY AUTHORIZE THIS FLIGHT. THE FLIGHT HAS BEEN PLANNED AND
+            RELEASED IN ACCORDANCE WITH COMPANY OPERATIONS SPECIFICATIONS. WEATHER REPORTS AND
+            FORECASTS INDICATE THE FLIGHT CAN BE CONDUCTED SAFELY ALONG THE FILED ROUTE.
+            AIRCRAFT IS AIRWORTHY — NO MEL/CDL ITEMS OUTSTANDING.
+          </p>
+          <div class="ds-signs">
+            <div class="ds-sign">
+              <div class="sig">Cmaci Dispatch</div>
+              <div class="sig-label">Dispatcher</div>
+            </div>
+            <div class="ds-sign">
+              <div class="sig" id="sig-pic">—</div>
+              <div class="sig-label">Pilot in Command</div>
+            </div>
+          </div>
+        </div>
+
         <div class="ds-cmd">
           <div class="ds-label">ATC24 Command</div>
           <div class="ds-cmd-text" id="ds-command">—</div>
@@ -883,6 +972,21 @@
              `-${d.arrIcao})`;
     }
 
+    // Plausible block-fuel figures by aircraft category (ATC24 flights are short)
+    function estimateFuel(d) {
+      const ac = (d.aircraft || '').toUpperCase();
+      if (!ac) return null;
+      let trip;
+      if (FPL_SUPERS.includes(ac))       trip = 5200;
+      else if (FPL_HEAVIES.includes(ac)) trip = 4100;
+      else if (FPL_PROPS.includes(ac))   trip = 900;
+      else                               trip = 2400;
+      const cont = Math.round(trip * 0.10);
+      const altn = Math.round(trip * 0.25);
+      const res  = Math.round(trip * 0.35);
+      return { trip, cont, altn, res, block: trip + cont + altn + res };
+    }
+
     function renderDispatch(d) {
       const now = new Date();
       const dateStr = `${String(now.getUTCDate()).padStart(2,'0')} ${MONTHS[now.getUTCMonth()]} ${now.getUTCFullYear()}`;
@@ -910,6 +1014,16 @@
       document.getElementById('ds-vapp').textContent = sp.vapp || '—';
 
       document.getElementById('ds-fpl').textContent = buildFpl(d) || '—';
+
+      const fu = estimateFuel(d);
+      const fmt = (n) => n ? n.toLocaleString('en-US') : '—';
+      document.getElementById('fu-trip').textContent  = fu ? fmt(fu.trip)  : '—';
+      document.getElementById('fu-cont').textContent  = fu ? fmt(fu.cont)  : '—';
+      document.getElementById('fu-altn').textContent  = fu ? fmt(fu.altn)  : '—';
+      document.getElementById('fu-res').textContent   = fu ? fmt(fu.res)   : '—';
+      document.getElementById('fu-block').textContent = fu ? fmt(fu.block) : '—';
+
+      document.getElementById('sig-pic').textContent = d.ingame || d.callsign || '—';
 
       const hasData = d.callsign || d.depName || d.arrName;
       document.getElementById('dispatch-placeholder').style.display = hasData ? 'none' : 'flex';
