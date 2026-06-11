@@ -449,26 +449,6 @@
       color: #0d1117;
     }
 
-    #bar-charts-btn {
-      background: none;
-      border: 1px solid #3fb950;
-      border-radius: 4px;
-      color: #3fb950;
-      cursor: pointer;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 2px 8px;
-      height: 28px;
-      white-space: nowrap;
-      letter-spacing: 0.03em;
-      transition: all 0.15s;
-    }
-
-    #bar-charts-btn:hover {
-      background-color: #3fb950;
-      color: #0d1117;
-    }
-
     #bar-pill {
       display: none;
       position: fixed;
@@ -519,7 +499,6 @@
     <button id="bar-flighteye-btn" title="Toggle small Flight Eye widget">👁 Flight Eye</button>
     <button id="bar-femap-btn" title="Toggle large Flight Eye map">🗺 Large Map</button>
     <button id="bar-ipad-btn" title="Toggle iPad">📱 iPad</button>
-    <button id="bar-charts-btn" title="Toggle charts">📊 Charts</button>
     <button id="bar-expand-btn">▼</button>
     <button id="bar-shrink-btn" title="Minimise to pill">⊟</button>
     <button id="bar-close-btn" title="Close overlay">✕</button>
@@ -797,6 +776,13 @@
         commandOutputEl.style.color = "#3fb950";
       }
 
+      let speeds = null;
+      try {
+        speeds = Object.entries(V_SPEEDS).find(
+          ([k]) => k.toLowerCase() === aircraft.toLowerCase()
+        )?.[1] || null;
+      } catch {} // V_SPEEDS not yet defined on the initial load-time call
+
       window.electronAPI?.sendDispatchData({
         callsign,
         ingame:   ingameCallsign,
@@ -808,6 +794,7 @@
         arrIcao:  getIcao(arriving),
         fl:       flightLevel,
         route,
+        speeds,
         command:  allFilled ? buildCommand() : '',
       });
     }
@@ -1089,10 +1076,6 @@
 
     document.getElementById("bar-ipad-btn").addEventListener("click", () => {
       window.electronAPI?.toggleIpad();
-    });
-
-    document.getElementById("bar-charts-btn").addEventListener("click", () => {
-      window.electronAPI?.toggleCharts();
     });
 
     function setExpanded(expanded) {

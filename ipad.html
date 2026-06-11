@@ -210,6 +210,21 @@
     }
 
     /* ════════════════════════════════════
+       CHARTS PANEL
+    ════════════════════════════════════ */
+    #panel-charts {
+      display: flex;
+      flex-direction: column;
+      background: #0d1117;
+    }
+    #panel-charts webview {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      border: none;
+    }
+
+    /* ════════════════════════════════════
        DISPATCH PANEL
     ════════════════════════════════════ */
     #panel-dispatch {
@@ -349,6 +364,43 @@
       color: #999;
       font-size: 1.2rem;
       line-height: 1;
+    }
+
+    /* V-speeds strip */
+    .ds-speeds {
+      display: flex;
+      margin-top: 7px;
+    }
+    .ds-speed {
+      flex: 1;
+      text-align: center;
+      border-right: 1px dashed #d0cfc8;
+      padding: 2px 0;
+    }
+    .ds-speed:last-child { border-right: none; }
+    .sp-name {
+      font-size: 0.56rem;
+      letter-spacing: 0.1em;
+      color: #888;
+      text-transform: uppercase;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin-bottom: 2px;
+    }
+    .sp-val {
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: #1a1a2e;
+    }
+
+    /* ICAO FPL string */
+    .ds-fpl {
+      margin-top: 5px;
+      font-size: 0.74rem;
+      white-space: pre-line;
+      line-height: 1.55;
+      color: #1a1a2e;
+      font-weight: 700;
+      letter-spacing: 0.02em;
     }
 
     /* Command block */
@@ -556,6 +608,7 @@
     <div class="ipad-tab active" data-tab="dispatch">📄 Dispatch</div>
     <div class="ipad-tab"        data-tab="checklist">✅ Checklist</div>
     <div class="ipad-tab"        data-tab="pad">✏ Pad</div>
+    <div class="ipad-tab"        data-tab="charts">🗺 Charts</div>
   </div>
 
   <!-- ── Content ── -->
@@ -629,6 +682,22 @@
               <span class="ds-value mono" id="ds-route">—</span>
             </div>
           </div>
+        </div>
+
+        <div class="ds-block">
+          <span class="ds-label">Performance — V-Speeds (kt)</span>
+          <div class="ds-speeds">
+            <div class="ds-speed"><div class="sp-name">V1</div><div class="sp-val" id="ds-v1">—</div></div>
+            <div class="ds-speed"><div class="sp-name">VR</div><div class="sp-val" id="ds-vr">—</div></div>
+            <div class="ds-speed"><div class="sp-name">V2</div><div class="sp-val" id="ds-v2">—</div></div>
+            <div class="ds-speed"><div class="sp-name">Vref</div><div class="sp-val" id="ds-vref">—</div></div>
+            <div class="ds-speed"><div class="sp-name">Vapp</div><div class="sp-val" id="ds-vapp">—</div></div>
+          </div>
+        </div>
+
+        <div class="ds-block">
+          <span class="ds-label">ICAO Flight Plan — Filed</span>
+          <div class="ds-fpl" id="ds-fpl">—</div>
         </div>
 
         <div class="ds-cmd">
@@ -734,6 +803,11 @@
       </div>
     </div>
 
+    <!-- CHARTS -->
+    <div class="panel" id="panel-charts">
+      <webview id="charts-webview" allowpopups></webview>
+    </div>
+
   </div><!-- /ipad-content -->
 
   <!-- ── Home indicator ── -->
@@ -765,9 +839,18 @@
         tab.classList.add('active');
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById('panel-' + t).classList.add('active');
-        if (t === 'pad') initPad();
+        if (t === 'pad')    initPad();
+        if (t === 'charts') initCharts();
       });
     });
+
+    // ── Charts (lazy-loaded so the iPad opens fast) ──────────────────────────
+    let chartsInited = false;
+    function initCharts() {
+      if (chartsInited) return;
+      chartsInited = true;
+      document.getElementById('charts-webview').src = 'https://aeronav.space/app';
+    }
 
     // ── Window buttons ───────────────────────────────────────────────────────
     document.getElementById('min-btn').addEventListener('click', () => window.minimize());
@@ -777,6 +860,28 @@
     // DISPATCH
     // ════════════════════════════════════
     const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+    // Wake categories / cruise speeds for the filed FPL string
+    const FPL_SUPERS  = ['A380', 'AN-225'];
+    const FPL_HEAVIES = ['A330','A340','A350','BELUGAXL','B707','B747','B767','B777','B787',
+                         'DC-10','MD-11','L-1011','AN-22'];
+    const FPL_PROPS   = ['ATR-72','Q400','AN-22'];
+
+    function buildFpl(d) {
+      if (!d.callsign || !d.depIcao || !d.arrIcao || !d.aircraft) return '';
+      const ac    = d.aircraft.toUpperCase();
+      const rules = d.rules === 'VFR' ? 'V' : 'I';
+      const wake  = FPL_SUPERS.includes(ac) ? 'J' : FPL_HEAVIES.includes(ac) ? 'H' : 'M';
+      const spd   = FPL_PROPS.includes(ac) ? '0300' : '0450';
+      const fl    = String(d.fl || '0').padStart(3, '0');
+      const cs    = d.callsign.toUpperCase().replace(/\s+/g, '');
+      const rte   = (d.route || 'DCT').toUpperCase();
+      return `(FPL-${cs}-${rules}S\n` +
+             `-${ac}/${wake}-SDFGRWY/S\n` +
+             `-${d.depIcao}\n` +
+             `-N${spd}F${fl} ${rte}\n` +
+             `-${d.arrIcao})`;
+    }
 
     function renderDispatch(d) {
       const now = new Date();
@@ -796,6 +901,15 @@
       document.getElementById('ds-fl').textContent       = d.fl ? `FL${d.fl}` : '—';
       document.getElementById('ds-route').textContent    = d.route     || '—';
       document.getElementById('ds-command').textContent  = d.command   || '—';
+
+      const sp = d.speeds || {};
+      document.getElementById('ds-v1').textContent   = sp.v1   || '—';
+      document.getElementById('ds-vr').textContent   = sp.vr   || '—';
+      document.getElementById('ds-v2').textContent   = sp.v2   || '—';
+      document.getElementById('ds-vref').textContent = sp.vref || '—';
+      document.getElementById('ds-vapp').textContent = sp.vapp || '—';
+
+      document.getElementById('ds-fpl').textContent = buildFpl(d) || '—';
 
       const hasData = d.callsign || d.depName || d.arrName;
       document.getElementById('dispatch-placeholder').style.display = hasData ? 'none' : 'flex';

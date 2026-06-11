@@ -9,7 +9,6 @@ try {
     hideFlightEyeWindows: ()       => ipcRenderer.send('hide-flighteye-windows'),
     restoreFlightEyeWindows: ()    => ipcRenderer.send('restore-flighteye-windows'),
     toggleIpad:           ()       => ipcRenderer.send('toggle-ipad'),
-    toggleCharts:         ()       => ipcRenderer.send('toggle-charts'),
     sendDispatchData:     (data)   => ipcRenderer.send('dispatch-data', data),
   });
 } catch (e) {

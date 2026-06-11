@@ -12,7 +12,6 @@ let win;
 let feWin;
 let feLargeWin;
 let ipadWin;
-let chartsWin;
 
 // ─── Persistent bounds ────────────────────────────────────────────────────────
 let settingsPath;
@@ -107,7 +106,7 @@ function createIpadWindow() {
     skipTaskbar: true, hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, 'ipad-preload.js'),
-      contextIsolation: true, nodeIntegration: false,
+      contextIsolation: true, nodeIntegration: false, webviewTag: true,
     },
   });
 
@@ -129,35 +128,6 @@ function createIpadWindow() {
     ipadWin.hide();
   });
   ipadWin.on('closed', () => { ipadWin = null; });
-}
-
-// ─── Charts popup ────────────────────────────────────────────────────────────
-function createChartsWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-  const def = { width: Math.round(width * 0.7), height: Math.round(height * 0.8),
-                x: Math.round(width * 0.15), y: 60 };
-  const b = getBounds('charts', def);
-
-  chartsWin = new BrowserWindow({
-    width: b.width, height: b.height, x: b.x, y: b.y,
-    frame: false, transparent: false,
-    resizable: true, movable: true,
-    skipTaskbar: true, hasShadow: true,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, webviewTag: true },
-  });
-
-  chartsWin.loadFile('charts.html');
-  chartsWin.setAlwaysOnTop(true, 'pop-up-menu');
-
-  chartsWin.on('resize', () => saveBoundsOf('charts', chartsWin));
-  chartsWin.on('move',   () => saveBoundsOf('charts', chartsWin));
-  chartsWin.on('minimize', () => { saveBoundsOf('charts', chartsWin); chartsWin.hide(); });
-  chartsWin.on('close', (e) => {
-    e.preventDefault();
-    saveBoundsOf('charts', chartsWin);
-    chartsWin.hide();
-  });
-  chartsWin.on('closed', () => { chartsWin = null; });
 }
 
 // ─── Main overlay ─────────────────────────────────────────────────────────────
@@ -189,7 +159,6 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
   if (ipadWin)    { ipadWin.removeAllListeners('close');    ipadWin.close(); }
-  if (chartsWin)  { chartsWin.removeAllListeners('close');  chartsWin.close(); }
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -216,7 +185,6 @@ ipcMain.on('restore-flighteye-windows', () => {
 ipcMain.on('close-window', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
   if (ipadWin)    { ipadWin.removeAllListeners('close');    ipadWin.close(); }
-  if (chartsWin)  { chartsWin.removeAllListeners('close');  chartsWin.close(); }
   if (feWin) feWin.close();
   if (win)   win.close();
 });
@@ -246,16 +214,6 @@ ipcMain.on('toggle-ipad', () => {
     ipadWin.hide();
   } else {
     ipadWin.show();
-  }
-});
-
-ipcMain.on('toggle-charts', () => {
-  if (!chartsWin) { createChartsWindow(); return; }
-  if (chartsWin.isVisible()) {
-    saveBoundsOf('charts', chartsWin);
-    chartsWin.hide();
-  } else {
-    chartsWin.show();
   }
 });
 
