@@ -237,6 +237,7 @@
     <div class="ph-tab" data-phase="taxi">🚕 Taxi</div>
     <div class="ph-tab" data-phase="takeoff">🛫 Takeoff</div>
     <div class="ph-tab" data-phase="cruise">✈ Cruise</div>
+    <div class="ph-tab" data-phase="descent">📉 Descent</div>
     <div class="ph-tab" data-phase="landing">🛬 Landing</div>
     <div class="ph-tab" data-phase="shutdown">🔴 Shutdown</div>
   </div>
@@ -246,57 +247,44 @@
   <div id="checklist-content">
 
     <div class="phase-panel active" id="panel-startup">
-      <div class="checklist-item" data-id="su-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Parking brake — SET</span></div>
-      <div class="checklist-item" data-id="su-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Battery / APU — ON</span></div>
-      <div class="checklist-item" data-id="su-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Beacon light — ON</span></div>
-      <div class="checklist-item" data-id="su-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Engine 1 — START</span></div>
-      <div class="checklist-item" data-id="su-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Engine 2 — START</span></div>
-      <div class="checklist-item" data-id="su-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Hydraulics — CHECK</span></div>
-      <div class="checklist-item" data-id="su-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Transponder — STBY</span></div>
-      <div class="checklist-item" data-id="su-8"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Request clearance (IFR/VFR)</span></div>
-      <div class="checklist-item" data-id="su-9"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Request pushback clearance</span></div>
+      <div class="checklist-item" data-id="su-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">IFR clearance — RECEIVED</span></div>
+      <div class="checklist-item" data-id="su-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Fuel — CHECKED</span></div>
+      <div class="checklist-item" data-id="su-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Pushback — COMPLETE</span></div>
+      <div class="checklist-item" data-id="su-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Engines — STARTED</span></div>
+      <div class="checklist-item" data-id="su-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Controls — CHECKED</span></div>
     </div>
 
     <div class="phase-panel" id="panel-taxi">
-      <div class="checklist-item" data-id="tx-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Parking brake — RELEASE</span></div>
-      <div class="checklist-item" data-id="tx-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Taxi lights — ON</span></div>
-      <div class="checklist-item" data-id="tx-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Brakes — CHECK</span></div>
-      <div class="checklist-item" data-id="tx-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Flaps — SET for takeoff</span></div>
-      <div class="checklist-item" data-id="tx-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Transponder — TA/RA</span></div>
-      <div class="checklist-item" data-id="tx-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">V-speeds — NOTE (V1 / VR / V2)</span></div>
-      <div class="checklist-item" data-id="tx-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Hold-short — COMPLY</span></div>
+      <div class="checklist-item" data-id="tx-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Flaps — SET for takeoff</span></div>
+      <div class="checklist-item" data-id="tx-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">V-speeds — CHECKED</span></div>
+      <div class="checklist-item" data-id="tx-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Taxi clearance — RECEIVED</span></div>
+      <div class="checklist-item" data-id="tx-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Hold short line — HOLD</span></div>
     </div>
 
     <div class="phase-panel" id="panel-takeoff">
       <div class="checklist-item" data-id="to-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Takeoff clearance — RECEIVED</span></div>
-      <div class="checklist-item" data-id="to-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing lights — ON</span></div>
-      <div class="checklist-item" data-id="to-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Throttle to takeoff power</span></div>
-      <div class="checklist-item" data-id="to-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">V1 — CALLED</span></div>
-      <div class="checklist-item" data-id="to-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">VR — ROTATE</span></div>
-      <div class="checklist-item" data-id="to-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Positive rate — GEAR UP</span></div>
-      <div class="checklist-item" data-id="to-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Flaps — RETRACT (schedule)</span></div>
-      <div class="checklist-item" data-id="to-8"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Contact departure frequency</span></div>
+      <div class="checklist-item" data-id="to-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Takeoff power — SET</span></div>
+      <div class="checklist-item" data-id="to-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">V-speeds — CALLED (V1 / VR / V2)</span></div>
+      <div class="checklist-item" data-id="to-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Positive rate — GEAR UP</span></div>
+      <div class="checklist-item" data-id="to-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Hand off — COMPLETE</span></div>
     </div>
 
     <div class="phase-panel" id="panel-cruise">
-      <div class="checklist-item" data-id="cr-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Cruise altitude — REACHED</span></div>
-      <div class="checklist-item" data-id="cr-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Autopilot — ENGAGED</span></div>
-      <div class="checklist-item" data-id="cr-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing lights — OFF</span></div>
-      <div class="checklist-item" data-id="cr-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Contact center frequency</span></div>
-      <div class="checklist-item" data-id="cr-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Fuel — MONITOR</span></div>
-      <div class="checklist-item" data-id="cr-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Check destination ATIS / weather</span></div>
-      <div class="checklist-item" data-id="cr-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Descent plan — REVIEWED</span></div>
+      <div class="checklist-item" data-id="cr-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Cruise altitude — SET & REACHED</span></div>
+      <div class="checklist-item" data-id="cr-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Fuel — CHECKED</span></div>
+      <div class="checklist-item" data-id="cr-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Destination ATIS — OBTAINED</span></div>
+    </div>
+
+    <div class="phase-panel" id="panel-descent">
+      <div class="checklist-item" data-id="de-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Descent clearance — RECEIVED</span></div>
     </div>
 
     <div class="phase-panel" id="panel-landing">
-      <div class="checklist-item" data-id="la-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Request descent clearance</span></div>
-      <div class="checklist-item" data-id="la-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Autopilot — MANAGED DESCENT</span></div>
-      <div class="checklist-item" data-id="la-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing lights — ON</span></div>
-      <div class="checklist-item" data-id="la-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Flaps — SET approach</span></div>
-      <div class="checklist-item" data-id="la-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Speed — Vapp CHECK</span></div>
-      <div class="checklist-item" data-id="la-6"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Gear — DOWN & LOCKED</span></div>
-      <div class="checklist-item" data-id="la-7"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Autobrake / spoilers — ARMED</span></div>
-      <div class="checklist-item" data-id="la-8"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing clearance — RECEIVED</span></div>
+      <div class="checklist-item" data-id="la-1"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">On final or base leg — CONFIRMED</span></div>
+      <div class="checklist-item" data-id="la-2"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Landing clearance — RECEIVED</span></div>
+      <div class="checklist-item" data-id="la-3"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Gear — DOWN</span></div>
+      <div class="checklist-item" data-id="la-4"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Flaps — SET</span></div>
+      <div class="checklist-item" data-id="la-5"><div class="item-box"><span class="item-check-icon">✓</span></div><span class="item-label">Vapp — CHECKED & SET</span></div>
     </div>
 
     <div class="phase-panel" id="panel-shutdown">
@@ -319,7 +307,7 @@
   </div>
 
   <script>
-    const PHASES = ['startup', 'taxi', 'takeoff', 'cruise', 'landing', 'shutdown'];
+    const PHASES = ['startup', 'taxi', 'takeoff', 'cruise', 'descent', 'landing', 'shutdown'];
     let currentPhase = 'startup';
 
     // Load state from localStorage
