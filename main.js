@@ -102,9 +102,9 @@ function createIpadWindow() {
 
   ipadWin = new BrowserWindow({
     width: b.width, height: b.height, x: b.x, y: b.y,
-    frame: false, transparent: false,
+    frame: false, transparent: true,
     resizable: true, movable: true,
-    skipTaskbar: true, hasShadow: true,
+    skipTaskbar: true, hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, 'ipad-preload.js'),
       contextIsolation: true, nodeIntegration: false,

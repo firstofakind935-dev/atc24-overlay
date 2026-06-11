@@ -14,91 +14,180 @@
     }
 
     body {
-      display: flex;
-      flex-direction: column;
       height: 100vh;
-      background: #0d1117;
+      background: transparent;
       overflow: hidden;
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
       color: #e6edf3;
+      padding: 6px;
       animation: slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
-    /* ── Titlebar ── */
-    #titlebar {
-      height: 34px;
-      background: #161b22;
-      border-bottom: 1px solid #30363d;
+    /* ── Bezel (the physical iPad) ── */
+    #bezel {
+      height: 100%;
+      background: linear-gradient(145deg, #2a2a2e 0%, #131316 55%, #1d1d21 100%);
+      border-radius: 26px;
+      padding: 12px;
+      box-shadow:
+        inset 0 0 0 1.5px rgba(255,255,255,0.09),
+        inset 0 0 0 3px rgba(0,0,0,0.85),
+        0 10px 40px rgba(0,0,0,0.65);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* front camera dot */
+    #bezel::before {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #3a4a5a, #0a0a0c 70%);
+      box-shadow: 0 0 2px rgba(80,140,255,0.35);
+    }
+
+    /* ── Screen ── */
+    #screen {
+      flex: 1;
+      min-height: 0;
+      background: #0d1117;
+      border-radius: 15px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 0 6px rgba(0,0,0,0.9);
+    }
+
+    /* ── iOS status bar ── */
+    #statusbar {
+      height: 26px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 14px;
       flex-shrink: 0;
+      background: #0d1117;
       -webkit-app-region: drag;
       user-select: none;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #e6edf3;
     }
-    #titlebar-label {
-      font-size: 0.8rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #58a6ff;
-    }
-    #titlebar-label span {
-      color: #8b949e;
-      font-weight: 400;
-      margin-left: 6px;
-      font-size: 0.7rem;
-      letter-spacing: 0.03em;
-      text-transform: none;
-    }
-    #titlebar-right {
-      display: flex;
-      gap: 8px;
-      -webkit-app-region: no-drag;
-    }
-    .tb-btn {
-      background: none;
-      border: 1px solid #30363d;
-      border-radius: 4px;
-      color: #8b949e;
-      cursor: pointer;
-      font-size: 12px;
-      padding: 2px 8px;
-      height: 24px;
+    #sb-left  { display: flex; align-items: center; gap: 7px; }
+    #sb-right { display: flex; align-items: center; gap: 8px; -webkit-app-region: no-drag; }
+
+    #sb-clock { font-variant-numeric: tabular-nums; }
+    #sb-date  { color: #8b949e; font-weight: 500; }
+
+    .sb-glyph { color: #e6edf3; font-size: 0.62rem; letter-spacing: 0; }
+
+    /* battery */
+    #sb-batt {
       display: flex;
       align-items: center;
       gap: 4px;
-      transition: all 0.15s;
-      white-space: nowrap;
+      color: #e6edf3;
+      font-size: 0.62rem;
     }
-    .tb-btn:hover     { border-color: #58a6ff; color: #58a6ff; }
-    #close-btn:hover  { background: #da3633; border-color: #da3633; color: #fff; }
+    #sb-batt-shell {
+      width: 21px;
+      height: 10px;
+      border: 1px solid rgba(230,237,243,0.5);
+      border-radius: 3px;
+      padding: 1px;
+      position: relative;
+    }
+    #sb-batt-shell::after {
+      content: '';
+      position: absolute;
+      right: -3px;
+      top: 2.5px;
+      width: 2px;
+      height: 4px;
+      background: rgba(230,237,243,0.5);
+      border-radius: 0 1px 1px 0;
+    }
+    #sb-batt-fill {
+      height: 100%;
+      width: 86%;
+      background: #30d158;
+      border-radius: 1.5px;
+    }
 
-    /* ── Top tab bar ── */
+    /* window controls — subtle, iOS-ish */
+    .sb-btn {
+      background: rgba(255,255,255,0.08);
+      border: none;
+      border-radius: 50%;
+      width: 17px;
+      height: 17px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 10px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      padding: 0;
+    }
+    .sb-btn:hover    { background: rgba(255,255,255,0.18); color: #fff; }
+    #close-btn:hover { background: #ff453a; color: #fff; }
+
+    /* ── iOS segmented-control tab bar ── */
     #ipad-tabbar {
       display: flex;
-      background: #0d1117;
-      border-bottom: 1px solid #30363d;
+      background: rgba(118,118,128,0.18);
+      border-radius: 9px;
+      padding: 2px;
+      margin: 6px 12px 8px;
       flex-shrink: 0;
+      position: relative;
     }
     .ipad-tab {
       flex: 1;
-      padding: 9px 0;
+      padding: 6px 0;
       text-align: center;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 600;
       color: #8b949e;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
-      letter-spacing: 0.05em;
+      border-radius: 7px;
+      letter-spacing: 0.02em;
       user-select: none;
-      transition: color 0.15s, border-color 0.15s;
+      transition: color 0.18s, background 0.18s, box-shadow 0.18s;
     }
-    .ipad-tab:hover { color: #e6edf3; }
-    .ipad-tab.active[data-tab="dispatch"]  { color: #58a6ff; border-bottom-color: #58a6ff; }
-    .ipad-tab.active[data-tab="checklist"] { color: #e3b341; border-bottom-color: #e3b341; }
-    .ipad-tab.active[data-tab="pad"]       { color: #a5d6ff; border-bottom-color: #a5d6ff; }
+    .ipad-tab:hover:not(.active) { color: #e6edf3; }
+    .ipad-tab.active {
+      background: #3a3a3f;
+      color: #ffffff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    /* ── Home indicator ── */
+    #home-indicator {
+      flex-shrink: 0;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0d1117;
+      -webkit-app-region: drag;
+    }
+    #home-indicator::after {
+      content: '';
+      width: 96px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(230,237,243,0.35);
+    }
 
     /* ── Content area ── */
     #ipad-content {
@@ -441,12 +530,24 @@
 </head>
 <body>
 
-  <!-- ── Titlebar ── -->
-  <div id="titlebar">
-    <span id="titlebar-label">📱 iPad <span>— drag to move · resize from corner</span></span>
-    <div id="titlebar-right">
-      <button class="tb-btn" id="min-btn">—</button>
-      <button class="tb-btn" id="close-btn">✕ Close</button>
+  <div id="bezel">
+  <div id="screen">
+
+  <!-- ── iOS status bar ── -->
+  <div id="statusbar">
+    <div id="sb-left">
+      <span id="sb-clock">9:41</span>
+      <span id="sb-date">Mon 1 Jan</span>
+    </div>
+    <div id="sb-right">
+      <span class="sb-glyph">●●●●</span>
+      <span class="sb-glyph">📶</span>
+      <div id="sb-batt">
+        <span>86%</span>
+        <div id="sb-batt-shell"><div id="sb-batt-fill"></div></div>
+      </div>
+      <button class="sb-btn" id="min-btn" title="Minimise">—</button>
+      <button class="sb-btn" id="close-btn" title="Close">✕</button>
     </div>
   </div>
 
@@ -635,7 +736,27 @@
 
   </div><!-- /ipad-content -->
 
+  <!-- ── Home indicator ── -->
+  <div id="home-indicator"></div>
+
+  </div><!-- /screen -->
+  </div><!-- /bezel -->
+
   <script>
+    // ── Status bar clock ─────────────────────────────────────────────────────
+    const SB_DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const SB_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    function updateClock() {
+      const n = new Date();
+      const h = n.getHours();
+      const m = String(n.getMinutes()).padStart(2, '0');
+      document.getElementById('sb-clock').textContent = `${h}:${m}`;
+      document.getElementById('sb-date').textContent =
+        `${SB_DAYS[n.getDay()]} ${n.getDate()} ${SB_MONTHS[n.getMonth()]}`;
+    }
+    updateClock();
+    setInterval(updateClock, 15000);
     // ── Tab switching ────────────────────────────────────────────────────────
     document.querySelectorAll('.ipad-tab').forEach(tab => {
       tab.addEventListener('click', () => {
