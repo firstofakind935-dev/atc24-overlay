@@ -676,8 +676,9 @@
       document.getElementById('ds-route').textContent    = d.route     || '—';
       document.getElementById('ds-command').textContent  = d.command   || '—';
 
-      document.getElementById('dispatch-placeholder').style.display = 'none';
-      document.getElementById('dispatch-sheet').style.display = 'block';
+      const hasData = d.callsign || d.depName || d.arrName;
+      document.getElementById('dispatch-placeholder').style.display = hasData ? 'none' : 'flex';
+      document.getElementById('dispatch-sheet').style.display = hasData ? 'block' : 'none';
     }
 
     window.ipadAPI?.onDispatchData(renderDispatch);

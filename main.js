@@ -114,6 +114,12 @@ function createIpadWindow() {
   ipadWin.loadFile('ipad.html');
   ipadWin.setAlwaysOnTop(true, 'pop-up-menu');
 
+  ipadWin.webContents.on('did-finish-load', () => {
+    if (lastDispatchData) {
+      ipadWin.webContents.send('dispatch-data', lastDispatchData);
+    }
+  });
+
   ipadWin.on('resize', () => saveBoundsOf('ipad', ipadWin));
   ipadWin.on('move',   () => saveBoundsOf('ipad', ipadWin));
   ipadWin.on('minimize', () => { saveBoundsOf('ipad', ipadWin); ipadWin.hide(); });
@@ -253,8 +259,11 @@ ipcMain.on('toggle-charts', () => {
   }
 });
 
-// Forward dispatch data from main window → iPad
+// Forward dispatch data from main window → iPad (cache so late-opening iPad gets it)
+let lastDispatchData = null;
+
 ipcMain.on('dispatch-data', (_e, data) => {
+  lastDispatchData = data;
   if (ipadWin && !ipadWin.isDestroyed()) {
     ipadWin.webContents.send('dispatch-data', data);
   }
