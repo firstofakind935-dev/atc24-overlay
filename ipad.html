@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes checkPop {
+      0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); }
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #0d1117;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #e6edf3;
+      animation: slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* ── Titlebar ── */
+    #titlebar {
+      height: 34px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+    #titlebar-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #58a6ff;
+    }
+    #titlebar-label span {
+      color: #8b949e;
+      font-weight: 400;
+      margin-left: 6px;
+      font-size: 0.7rem;
+      letter-spacing: 0.03em;
+      text-transform: none;
+    }
+    #titlebar-right {
+      display: flex;
+      gap: 8px;
+      -webkit-app-region: no-drag;
+    }
+    .tb-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 8px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .tb-btn:hover     { border-color: #58a6ff; color: #58a6ff; }
+    #close-btn:hover  { background: #da3633; border-color: #da3633; color: #fff; }
+
+    /* ── Top tab bar ── */
+    #ipad-tabbar {
+      display: flex;
+      background: #0d1117;
+      border-bottom: 1px solid #30363d;
+      flex-shrink: 0;
+    }
+    .ipad-tab {
+      flex: 1;
+      padding: 9px 0;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #8b949e;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      letter-spacing: 0.05em;
+      user-select: none;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .ipad-tab:hover { color: #e6edf3; }
+    .ipad-tab.active[data-tab="dispatch"]  { color: #58a6ff; border-bottom-color: #58a6ff; }
+    .ipad-tab.active[data-tab="checklist"] { color: #e3b341; border-bottom-color: #e3b341; }
+    .ipad-tab.active[data-tab="pad"]       { color: #a5d6ff; border-bottom-color: #a5d6ff; }
+
+    /* ── Content area ── */
+    #ipad-content {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+    .panel {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s;
+      overflow: hidden;
+    }
+    .panel.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ════════════════════════════════════
+       DISPATCH PANEL
+    ════════════════════════════════════ */
+    #panel-dispatch {
+      overflow-y: auto;
+      background: #0d1117;
+      padding: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+    }
+
+    #dispatch-placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #8b949e;
+      text-align: center;
+    }
+    #dispatch-placeholder .ph-icon { font-size: 2.5rem; }
+    #dispatch-placeholder p { font-size: 0.82rem; line-height: 1.5; max-width: 260px; }
+
+    /* The printed OFP card */
+    #dispatch-sheet {
+      display: none;
+      background: #f8f7f2;
+      color: #1a1a2e;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    .ds-header {
+      background: #1a1a2e;
+      color: #f8f7f2;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .ds-airline {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .ds-title {
+      font-size: 0.62rem;
+      color: #8b949e;
+      letter-spacing: 0.06em;
+      margin-top: 3px;
+    }
+    .ds-datetime {
+      text-align: right;
+      font-size: 0.68rem;
+      color: #a0aab4;
+      letter-spacing: 0.05em;
+      line-height: 1.6;
+    }
+    .ds-datetime strong { color: #f8f7f2; }
+
+    .ds-divider {
+      height: 1px;
+      background: #d0cfc8;
+    }
+
+    .ds-block {
+      padding: 10px 16px;
+      border-bottom: 1px solid #e0dfd8;
+    }
+    .ds-block:last-child { border-bottom: none; }
+
+    .ds-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 16px;
+    }
+    .ds-grid.wide { grid-template-columns: 1fr; }
+
+    .ds-field { display: flex; flex-direction: column; gap: 2px; }
+    .ds-label {
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      color: #888;
+      text-transform: uppercase;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .ds-value {
+      font-size: 0.88rem;
+      color: #1a1a2e;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+    .ds-value.mono {
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    /* Route arrow block */
+    .ds-route {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e0dfd8;
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .ds-airport-block {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .ds-airport-block.dest { text-align: right; }
+    .ds-ap-icao {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #1a1a2e;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+    .ds-ap-name {
+      font-size: 0.7rem;
+      color: #555;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .ds-ap-role {
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      color: #888;
+      text-transform: uppercase;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+    .ds-arrow {
+      flex: 0 0 auto;
+      padding: 0 10px;
+      color: #999;
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    /* Command block */
+    .ds-cmd {
+      padding: 10px 16px;
+      background: #1a1a2e;
+    }
+    .ds-cmd .ds-label { color: #58a6ff; }
+    .ds-cmd-text {
+      font-size: 0.72rem;
+      color: #3fb950;
+      word-break: break-all;
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+
+    /* ════════════════════════════════════
+       CHECKLIST PANEL
+    ════════════════════════════════════ */
+    #panel-checklist {
+      display: flex;
+      flex-direction: column;
+      background: #0d1117;
+    }
+
+    #cl-phase-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      background: #0d1117;
+      border-bottom: 1px solid #30363d;
+      padding: 0 6px;
+      flex-shrink: 0;
+    }
+    .cl-tab {
+      padding: 6px 9px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #8b949e;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      letter-spacing: 0.03em;
+      user-select: none;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .cl-tab:hover { color: #e6edf3; }
+    .cl-tab.active { color: #e3b341; border-bottom-color: #e3b341; }
+
+    #cl-progress { height: 3px; background: #21262d; flex-shrink: 0; }
+    #cl-progress-fill { height: 100%; background: #e3b341; transition: width 0.3s ease; }
+
+    #cl-items {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+    }
+    #cl-items::-webkit-scrollbar { width: 4px; }
+    #cl-items::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+
+    .cl-phase-panel { display: none; }
+    .cl-phase-panel.active { display: block; }
+
+    .cl-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.12s;
+      border-bottom: 1px solid #161b22;
+    }
+    .cl-item:last-child { border-bottom: none; }
+    .cl-item:hover { background: #161b22; }
+    .cl-item.checked { opacity: 0.45; }
+    .cl-item.checked .cl-label { text-decoration: line-through; color: #8b949e; }
+
+    .cl-box {
+      width: 16px; height: 16px;
+      border: 1.5px solid #30363d;
+      border-radius: 3px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .cl-item.checked .cl-box {
+      background: #e3b341; border-color: #e3b341;
+      animation: checkPop 0.2s ease;
+    }
+    .cl-check-icon { color: #0d1117; font-size: 10px; font-weight: 900; opacity: 0; transition: opacity 0.1s; }
+    .cl-item.checked .cl-check-icon { opacity: 1; }
+    .cl-label { font-size: 0.82rem; color: #e6edf3; line-height: 1.3; }
+
+    #cl-footer {
+      padding: 8px 12px;
+      border-top: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    #cl-count { font-size: 0.72rem; color: #8b949e; }
+    #cl-count span { color: #e3b341; font-weight: 600; }
+    .cl-reset-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 0.72rem;
+      padding: 3px 9px;
+      transition: all 0.15s;
+    }
+    .cl-reset-btn:hover { border-color: #e3b341; color: #e3b341; }
+
+    /* ════════════════════════════════════
+       PAD PANEL
+    ════════════════════════════════════ */
+    #panel-pad {
+      display: flex;
+      flex-direction: column;
+    }
+    #pad-toolbar {
+      height: 36px;
+      background: #0d1117;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 10px;
+      flex-shrink: 0;
+    }
+    .pad-divider { width: 1px; height: 18px; background: #30363d; flex-shrink: 0; }
+    .pad-swatch {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer; flex-shrink: 0;
+      transition: border-color 0.12s, transform 0.12s;
+    }
+    .pad-swatch:hover { transform: scale(1.15); }
+    .pad-swatch.active { border-color: #e6edf3; }
+    #sw-black { background: #1a1a2e; }
+    #sw-blue  { background: #1a6fc4; }
+    .pad-tool-btn {
+      background: none;
+      border: 1px solid #30363d;
+      border-radius: 3px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 10px;
+      padding: 0 6px;
+      height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.12s; flex-shrink: 0;
+    }
+    .pad-tool-btn:hover   { border-color: #a5d6ff; color: #a5d6ff; }
+    .pad-tool-btn.active  { background: #1f3a5f; border-color: #a5d6ff; color: #a5d6ff; }
+    #pad-eraser:hover     { border-color: #e6edf3; color: #e6edf3; }
+    #pad-eraser.active    { background: #2a2a2a; border-color: #e6edf3; color: #e6edf3; }
+    #pad-clear:hover      { border-color: #da3633; color: #da3633; }
+
+    #pad-canvas-wrap {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      background: #ffffff;
+    }
+    #pad-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      cursor: crosshair;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Titlebar ── -->
+  <div id="titlebar">
+    <span id="titlebar-label">📱 iPad <span>— drag to move · resize from corner</span></span>
+    <div id="titlebar-right">
+      <button class="tb-btn" id="min-btn">—</button>
+      <button class="tb-btn" id="close-btn">✕ Close</button>
+    </div>
+  </div>
+
+  <!-- ── Tab bar ── -->
+  <div id="ipad-tabbar">
+    <div class="ipad-tab active" data-tab="dispatch">📄 Dispatch</div>
+    <div class="ipad-tab"        data-tab="checklist">✅ Checklist</div>
+    <div class="ipad-tab"        data-tab="pad">✏ Pad</div>
+  </div>
+
+  <!-- ── Content ── -->
+  <div id="ipad-content">
+
+    <!-- DISPATCH -->
+    <div class="panel active" id="panel-dispatch">
+      <div id="dispatch-placeholder">
+        <div class="ph-icon">📄</div>
+        <p>Fill in the flight plan generator in the overlay bar to generate your dispatch sheet.</p>
+      </div>
+      <div id="dispatch-sheet">
+        <div class="ds-header">
+          <div>
+            <div class="ds-airline">ATC24 · Operational Flight Plan</div>
+            <div class="ds-title">DISPATCH COPY — NOT FOR NAVIGATION</div>
+          </div>
+          <div class="ds-datetime">
+            <div>DATE <strong id="ds-date"></strong></div>
+            <div>TIME <strong id="ds-time"></strong></div>
+          </div>
+        </div>
+
+        <div class="ds-block">
+          <div class="ds-grid">
+            <div class="ds-field">
+              <span class="ds-label">Callsign</span>
+              <span class="ds-value mono" id="ds-callsign">—</span>
+            </div>
+            <div class="ds-field">
+              <span class="ds-label">In-Game ID</span>
+              <span class="ds-value" id="ds-ingame">—</span>
+            </div>
+            <div class="ds-field">
+              <span class="ds-label">Aircraft Type</span>
+              <span class="ds-value mono" id="ds-aircraft">—</span>
+            </div>
+            <div class="ds-field">
+              <span class="ds-label">Flight Rules</span>
+              <span class="ds-value mono" id="ds-rules">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-divider"></div>
+
+        <div class="ds-route">
+          <div class="ds-airport-block">
+            <div class="ds-ap-role">Origin</div>
+            <div class="ds-ap-icao" id="ds-dep-icao">—</div>
+            <div class="ds-ap-name" id="ds-dep-name">—</div>
+          </div>
+          <div class="ds-arrow">→</div>
+          <div class="ds-airport-block dest">
+            <div class="ds-ap-role">Destination</div>
+            <div class="ds-ap-icao" id="ds-arr-icao">—</div>
+            <div class="ds-ap-name" id="ds-arr-name">—</div>
+          </div>
+        </div>
+
+        <div class="ds-divider"></div>
+
+        <div class="ds-block">
+          <div class="ds-grid">
+            <div class="ds-field">
+              <span class="ds-label">Cruise Level</span>
+              <span class="ds-value mono" id="ds-fl">—</span>
+            </div>
+            <div class="ds-field">
+              <span class="ds-label">Route</span>
+              <span class="ds-value mono" id="ds-route">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ds-cmd">
+          <div class="ds-label">ATC24 Command</div>
+          <div class="ds-cmd-text" id="ds-command">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST -->
+    <div class="panel" id="panel-checklist">
+      <div id="cl-phase-tabs">
+        <div class="cl-tab active" data-phase="startup">⚙ Startup</div>
+        <div class="cl-tab" data-phase="taxi">🚕 Taxi</div>
+        <div class="cl-tab" data-phase="takeoff">🛫 Takeoff</div>
+        <div class="cl-tab" data-phase="cruise">✈ Cruise</div>
+        <div class="cl-tab" data-phase="descent">📉 Descent</div>
+        <div class="cl-tab" data-phase="landing">🛬 Landing</div>
+        <div class="cl-tab" data-phase="shutdown">🔴 Shutdown</div>
+      </div>
+      <div id="cl-progress"><div id="cl-progress-fill" style="width:0%"></div></div>
+      <div id="cl-items">
+
+        <div class="cl-phase-panel active" id="cl-panel-startup">
+          <div class="cl-item" data-id="su-1"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">IFR clearance — RECEIVED</span></div>
+          <div class="cl-item" data-id="su-2"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Fuel — CHECKED</span></div>
+          <div class="cl-item" data-id="su-3"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Pushback — COMPLETE</span></div>
+          <div class="cl-item" data-id="su-4"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Engines — STARTED</span></div>
+          <div class="cl-item" data-id="su-5"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Controls — CHECKED</span></div>
+        </div>
+
+        <div class="cl-phase-panel" id="cl-panel-taxi">
+          <div class="cl-item" data-id="tx-1"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Flaps — SET for takeoff</span></div>
+          <div class="cl-item" data-id="tx-2"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">V-speeds — CHECKED</span></div>
+          <div class="cl-item" data-id="tx-3"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Taxi clearance — RECEIVED</span></div>
+          <div class="cl-item" data-id="tx-4"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Hold short line — HOLD</span></div>
+        </div>
+
+        <div class="cl-phase-panel" id="cl-panel-takeoff">
+          <div class="cl-item" data-id="to-1"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Takeoff clearance — RECEIVED</span></div>
+          <div class="cl-item" data-id="to-2"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Takeoff power — SET</span></div>
+          <div class="cl-item" data-id="to-3"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">V-speeds — CALLED (V1 / VR / V2)</span></div>
+          <div class="cl-item" data-id="to-4"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Positive rate — GEAR UP</span></div>
+          <div class="cl-item" data-id="to-5"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Hand off — COMPLETE</span></div>
+        </div>
+
+        <div class="cl-phase-panel" id="cl-panel-cruise">
+          <div class="cl-item" data-id="cr-1"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Cruise altitude — SET & REACHED</span></div>
+          <div class="cl-item" data-id="cr-2"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Fuel — CHECKED</span></div>
+          <div class="cl-item" data-id="cr-3"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Destination ATIS — OBTAINED</span></div>
+        </div>
+
+        <div class="cl-phase-panel" id="cl-panel-descent">
+          <div class="cl-item" data-id="de-1"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Descent clearance — RECEIVED</span></div>
+        </div>
+
+        <div class="cl-phase-panel" id="cl-panel-landing">
+          <div class="cl-item" data-id="la-1"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">On final or base leg — CONFIRMED</span></div>
+          <div class="cl-item" data-id="la-2"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Landing clearance — RECEIVED</span></div>
+          <div class="cl-item" data-id="la-3"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Gear — DOWN</span></div>
+          <div class="cl-item" data-id="la-4"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Flaps — SET</span></div>
+          <div class="cl-item" data-id="la-5"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Vapp — CHECKED & SET</span></div>
+        </div>
+
+        <div class="cl-phase-panel" id="cl-panel-shutdown">
+          <div class="cl-item" data-id="sd-1"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Runway — CLEAR (exit at first)</span></div>
+          <div class="cl-item" data-id="sd-2"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Landing lights — OFF</span></div>
+          <div class="cl-item" data-id="sd-3"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Request taxi to gate</span></div>
+          <div class="cl-item" data-id="sd-4"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Taxi lights — OFF at gate</span></div>
+          <div class="cl-item" data-id="sd-5"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Parking brake — SET</span></div>
+          <div class="cl-item" data-id="sd-6"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Engine 1 — SHUTDOWN</span></div>
+          <div class="cl-item" data-id="sd-7"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Engine 2 — SHUTDOWN</span></div>
+          <div class="cl-item" data-id="sd-8"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Transponder — STBY / OFF</span></div>
+          <div class="cl-item" data-id="sd-9"><div class="cl-box"><span class="cl-check-icon">✓</span></div><span class="cl-label">Systems — ALL OFF</span></div>
+        </div>
+
+      </div>
+      <div id="cl-footer">
+        <span id="cl-count"><span id="cl-done">0</span> / <span id="cl-total">0</span> complete</span>
+        <div style="display:flex;gap:6px">
+          <button class="cl-reset-btn" id="cl-reset-phase">↺ Phase</button>
+          <button class="cl-reset-btn" id="cl-reset-all">↺ All</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAD -->
+    <div class="panel" id="panel-pad">
+      <div id="pad-toolbar">
+        <div class="pad-swatch active" id="sw-black" data-color="#1a1a2e" title="Black"></div>
+        <div class="pad-swatch"        id="sw-blue"  data-color="#1a6fc4" title="Blue"></div>
+        <div class="pad-divider"></div>
+        <button class="pad-tool-btn active" id="size-s" data-size="3">S</button>
+        <button class="pad-tool-btn"        id="size-l" data-size="8">L</button>
+        <div class="pad-divider"></div>
+        <button class="pad-tool-btn" id="pad-eraser">⌫ Eraser</button>
+        <div class="pad-divider"></div>
+        <button class="pad-tool-btn" id="pad-undo">↩ Undo</button>
+        <button class="pad-tool-btn" id="pad-clear">✕ Clear</button>
+      </div>
+      <div id="pad-canvas-wrap">
+        <canvas id="pad-canvas"></canvas>
+      </div>
+    </div>
+
+  </div><!-- /ipad-content -->
+
+  <script>
+    // ── Tab switching ────────────────────────────────────────────────────────
+    document.querySelectorAll('.ipad-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const t = tab.dataset.tab;
+        document.querySelectorAll('.ipad-tab').forEach(x => x.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-' + t).classList.add('active');
+        if (t === 'pad') initPad();
+      });
+    });
+
+    // ── Window buttons ───────────────────────────────────────────────────────
+    document.getElementById('min-btn').addEventListener('click', () => window.minimize());
+    document.getElementById('close-btn').addEventListener('click', () => window.close());
+
+    // ════════════════════════════════════
+    // DISPATCH
+    // ════════════════════════════════════
+    const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+    function renderDispatch(d) {
+      const now = new Date();
+      const dateStr = `${String(now.getUTCDate()).padStart(2,'0')} ${MONTHS[now.getUTCMonth()]} ${now.getUTCFullYear()}`;
+      const timeStr = `${String(now.getUTCHours()).padStart(2,'0')}${String(now.getUTCMinutes()).padStart(2,'0')}Z`;
+
+      document.getElementById('ds-date').textContent     = dateStr;
+      document.getElementById('ds-time').textContent     = timeStr;
+      document.getElementById('ds-callsign').textContent = d.callsign  || '—';
+      document.getElementById('ds-ingame').textContent   = d.ingame    || '—';
+      document.getElementById('ds-aircraft').textContent = d.aircraft  || '—';
+      document.getElementById('ds-rules').textContent    = d.rules     || '—';
+      document.getElementById('ds-dep-icao').textContent = d.depIcao   || '—';
+      document.getElementById('ds-dep-name').textContent = d.depName   || '—';
+      document.getElementById('ds-arr-icao').textContent = d.arrIcao   || '—';
+      document.getElementById('ds-arr-name').textContent = d.arrName   || '—';
+      document.getElementById('ds-fl').textContent       = d.fl ? `FL${d.fl}` : '—';
+      document.getElementById('ds-route').textContent    = d.route     || '—';
+      document.getElementById('ds-command').textContent  = d.command   || '—';
+
+      document.getElementById('dispatch-placeholder').style.display = 'none';
+      document.getElementById('dispatch-sheet').style.display = 'block';
+    }
+
+    window.ipadAPI?.onDispatchData(renderDispatch);
+
+    // ════════════════════════════════════
+    // CHECKLIST
+    // ════════════════════════════════════
+    let clPhase = 'startup';
+    const clState = JSON.parse(localStorage.getItem('cl-state') || '{}');
+
+    function clSave() { localStorage.setItem('cl-state', JSON.stringify(clState)); }
+
+    function clPhaseItems(phase) {
+      return document.querySelectorAll(`#cl-panel-${phase} .cl-item`);
+    }
+
+    function clUpdateProgress() {
+      const items = clPhaseItems(clPhase);
+      const total = items.length;
+      const done  = [...items].filter(i => i.classList.contains('checked')).length;
+      document.getElementById('cl-done').textContent  = done;
+      document.getElementById('cl-total').textContent = total;
+      document.getElementById('cl-progress-fill').style.width = total ? `${(done/total)*100}%` : '0%';
+    }
+
+    function clApplyState() {
+      document.querySelectorAll('.cl-item').forEach(item => {
+        item.classList.toggle('checked', !!clState[item.dataset.id]);
+      });
+      clUpdateProgress();
+    }
+
+    function clSwitchPhase(phase) {
+      clPhase = phase;
+      document.querySelectorAll('.cl-tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.phase === phase));
+      document.querySelectorAll('.cl-phase-panel').forEach(p =>
+        p.classList.toggle('active', p.id === `cl-panel-${phase}`));
+      clUpdateProgress();
+    }
+
+    document.querySelectorAll('.cl-tab').forEach(t =>
+      t.addEventListener('click', () => clSwitchPhase(t.dataset.phase)));
+
+    document.querySelectorAll('.cl-item').forEach(item => {
+      item.addEventListener('click', () => {
+        clState[item.dataset.id] = !clState[item.dataset.id];
+        item.classList.toggle('checked', clState[item.dataset.id]);
+        clSave();
+        clUpdateProgress();
+      });
+    });
+
+    document.getElementById('cl-reset-phase').addEventListener('click', () => {
+      clPhaseItems(clPhase).forEach(item => {
+        clState[item.dataset.id] = false;
+        item.classList.remove('checked');
+      });
+      clSave(); clUpdateProgress();
+    });
+
+    document.getElementById('cl-reset-all').addEventListener('click', () => {
+      document.querySelectorAll('.cl-item').forEach(item => {
+        clState[item.dataset.id] = false;
+        item.classList.remove('checked');
+      });
+      clSave(); clUpdateProgress();
+    });
+
+    clApplyState();
+
+    // ════════════════════════════════════
+    // PAD / CANVAS
+    // ════════════════════════════════════
+    let padInited = false;
+    let padColor  = '#1a1a2e';
+    let padSize   = 3;
+    let padErase  = false;
+    let padDraw   = false;
+    let padLastX  = 0, padLastY = 0;
+    const padHistory = [];
+
+    function initPad() {
+      if (padInited) return;
+      padInited = true;
+      const canvas = document.getElementById('pad-canvas');
+      const wrap   = document.getElementById('pad-canvas-wrap');
+      const ctx    = canvas.getContext('2d');
+
+      function resize() {
+        const snap = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        canvas.width  = wrap.clientWidth;
+        canvas.height = wrap.clientHeight;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (snap.width > 0) ctx.putImageData(snap, 0, 0);
+      }
+
+      function getPos(e) {
+        const r = canvas.getBoundingClientRect();
+        const s = e.touches ? e.touches[0] : e;
+        return { x: s.clientX - r.left, y: s.clientY - r.top };
+      }
+
+      function saveHist() {
+        padHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        if (padHistory.length > 40) padHistory.shift();
+      }
+
+      canvas.addEventListener('mousedown', e => {
+        saveHist(); padDraw = true;
+        const {x,y} = getPos(e); padLastX = x; padLastY = y;
+        ctx.beginPath();
+        ctx.arc(x, y, (padErase ? padSize*4 : padSize)/2, 0, Math.PI*2);
+        ctx.fillStyle = padErase ? '#ffffff' : padColor;
+        ctx.fill();
+      });
+      canvas.addEventListener('mousemove', e => {
+        if (!padDraw) return; e.preventDefault();
+        const {x,y} = getPos(e);
+        ctx.beginPath(); ctx.moveTo(padLastX, padLastY); ctx.lineTo(x, y);
+        ctx.strokeStyle = padErase ? '#ffffff' : padColor;
+        ctx.lineWidth   = padErase ? padSize*4 : padSize;
+        ctx.lineCap = ctx.lineJoin = 'round';
+        ctx.stroke();
+        padLastX = x; padLastY = y;
+      });
+      canvas.addEventListener('mouseup',    () => { padDraw = false; });
+      canvas.addEventListener('mouseleave', () => { padDraw = false; });
+
+      document.getElementById('pad-undo').addEventListener('click', () => {
+        if (padHistory.length) ctx.putImageData(padHistory.pop(), 0, 0);
+      });
+      document.getElementById('pad-clear').addEventListener('click', () => {
+        saveHist();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      });
+
+      new ResizeObserver(resize).observe(wrap);
+      resize();
+    }
+
+    document.querySelectorAll('.pad-swatch').forEach(s => {
+      s.addEventListener('click', () => {
+        padColor = s.dataset.color; padErase = false;
+        document.querySelectorAll('.pad-swatch').forEach(x => x.classList.remove('active'));
+        s.classList.add('active');
+        document.getElementById('pad-eraser').classList.remove('active');
+      });
+    });
+
+    document.querySelectorAll('.pad-tool-btn[data-size]').forEach(b => {
+      b.addEventListener('click', () => {
+        padSize = parseInt(b.dataset.size);
+        document.querySelectorAll('.pad-tool-btn[data-size]').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+      });
+    });
+
+    document.getElementById('pad-eraser').addEventListener('click', () => {
+      padErase = !padErase;
+      document.getElementById('pad-eraser').classList.toggle('active', padErase);
+      if (padErase) {
+        document.querySelectorAll('.pad-swatch').forEach(x => x.classList.remove('active'));
+      } else {
+        document.querySelector(`.pad-swatch[data-color="${padColor}"]`)?.classList.add('active');
+      }
+    });
+  </script>
+</body>
+</html>

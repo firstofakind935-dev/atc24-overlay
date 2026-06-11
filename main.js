@@ -11,8 +11,7 @@ const BAR_HEIGHT      = 52;
 let win;
 let feWin;
 let feLargeWin;
-let clWin;
-let spWin;
+let ipadWin;
 let chartsWin;
 
 // ─── Persistent bounds ────────────────────────────────────────────────────────
@@ -56,11 +55,8 @@ function createFlightEyeWindow() {
 
   feWin.on('resize',   () => saveBoundsOf('feSmall', feWin));
   feWin.on('move',     () => saveBoundsOf('feSmall', feWin));
-  feWin.on('minimize', () => {
-    saveBoundsOf('feSmall', feWin);
-    feWin.hide();
-  });
-  feWin.on('closed', () => { feWin = null; });
+  feWin.on('minimize', () => { saveBoundsOf('feSmall', feWin); feWin.hide(); });
+  feWin.on('closed',   () => { feWin = null; });
 }
 
 // ─── Large Flight Eye popup ───────────────────────────────────────────────────
@@ -84,23 +80,49 @@ function createFlightEyeLargeWindow() {
 
   feLargeWin.on('resize', () => saveBoundsOf('feLarge', feLargeWin));
   feLargeWin.on('move',   () => saveBoundsOf('feLarge', feLargeWin));
-
-  // Minimize → save + hide, restore small
   feLargeWin.on('minimize', () => {
     saveBoundsOf('feLarge', feLargeWin);
     feLargeWin.hide();
     if (feWin) feWin.show(); else createFlightEyeWindow();
   });
-
-  // Close from renderer (window.close()) → save + hide, restore small
   feLargeWin.on('close', (e) => {
     e.preventDefault();
     saveBoundsOf('feLarge', feLargeWin);
     feLargeWin.hide();
     if (feWin) feWin.show(); else createFlightEyeWindow();
   });
-
   feLargeWin.on('closed', () => { feLargeWin = null; });
+}
+
+// ─── iPad popup ───────────────────────────────────────────────────────────────
+function createIpadWindow() {
+  const { width } = screen.getPrimaryDisplay().workAreaSize;
+  const def = { width: 680, height: 520, x: Math.round(width / 2 - 340), y: 60 };
+  const b = getBounds('ipad', def);
+
+  ipadWin = new BrowserWindow({
+    width: b.width, height: b.height, x: b.x, y: b.y,
+    frame: false, transparent: false,
+    resizable: true, movable: true,
+    skipTaskbar: true, hasShadow: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'ipad-preload.js'),
+      contextIsolation: true, nodeIntegration: false,
+    },
+  });
+
+  ipadWin.loadFile('ipad.html');
+  ipadWin.setAlwaysOnTop(true, 'pop-up-menu');
+
+  ipadWin.on('resize', () => saveBoundsOf('ipad', ipadWin));
+  ipadWin.on('move',   () => saveBoundsOf('ipad', ipadWin));
+  ipadWin.on('minimize', () => { saveBoundsOf('ipad', ipadWin); ipadWin.hide(); });
+  ipadWin.on('close', (e) => {
+    e.preventDefault();
+    saveBoundsOf('ipad', ipadWin);
+    ipadWin.hide();
+  });
+  ipadWin.on('closed', () => { ipadWin = null; });
 }
 
 // ─── Charts popup ────────────────────────────────────────────────────────────
@@ -123,78 +145,13 @@ function createChartsWindow() {
 
   chartsWin.on('resize', () => saveBoundsOf('charts', chartsWin));
   chartsWin.on('move',   () => saveBoundsOf('charts', chartsWin));
-  chartsWin.on('minimize', () => {
-    saveBoundsOf('charts', chartsWin);
-    chartsWin.hide();
-  });
+  chartsWin.on('minimize', () => { saveBoundsOf('charts', chartsWin); chartsWin.hide(); });
   chartsWin.on('close', (e) => {
     e.preventDefault();
     saveBoundsOf('charts', chartsWin);
     chartsWin.hide();
   });
   chartsWin.on('closed', () => { chartsWin = null; });
-}
-
-// ─── Scratchpad popup ────────────────────────────────────────────────────────
-function createScratchpadWindow() {
-  const { width } = screen.getPrimaryDisplay().workAreaSize;
-  const def = { width: 420, height: 340, x: Math.round(width / 2 - 210), y: 60 };
-  const b = getBounds('scratchpad', def);
-
-  spWin = new BrowserWindow({
-    width: b.width, height: b.height, x: b.x, y: b.y,
-    frame: false, transparent: false,
-    resizable: true, movable: true,
-    skipTaskbar: true, hasShadow: true,
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
-  });
-
-  spWin.loadFile('scratchpad.html');
-  spWin.setAlwaysOnTop(true, 'pop-up-menu');
-
-  spWin.on('resize', () => saveBoundsOf('scratchpad', spWin));
-  spWin.on('move',   () => saveBoundsOf('scratchpad', spWin));
-  spWin.on('minimize', () => {
-    saveBoundsOf('scratchpad', spWin);
-    spWin.hide();
-  });
-  spWin.on('close', (e) => {
-    e.preventDefault();
-    saveBoundsOf('scratchpad', spWin);
-    spWin.hide();
-  });
-  spWin.on('closed', () => { spWin = null; });
-}
-
-// ─── Checklist popup ─────────────────────────────────────────────────────────
-function createChecklistWindow() {
-  const { width } = screen.getPrimaryDisplay().workAreaSize;
-  const def = { width: 300, height: 490, x: width - 320, y: 60 };
-  const b = getBounds('checklist', def);
-
-  clWin = new BrowserWindow({
-    width: b.width, height: b.height, x: b.x, y: b.y,
-    frame: false, transparent: false,
-    resizable: true, movable: true,
-    skipTaskbar: true, hasShadow: true,
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
-  });
-
-  clWin.loadFile('checklist.html');
-  clWin.setAlwaysOnTop(true, 'pop-up-menu');
-
-  clWin.on('resize', () => saveBoundsOf('checklist', clWin));
-  clWin.on('move',   () => saveBoundsOf('checklist', clWin));
-  clWin.on('minimize', () => {
-    saveBoundsOf('checklist', clWin);
-    clWin.hide();
-  });
-  clWin.on('close', (e) => {
-    e.preventDefault();
-    saveBoundsOf('checklist', clWin);
-    clWin.hide();
-  });
-  clWin.on('closed', () => { clWin = null; });
 }
 
 // ─── Main overlay ─────────────────────────────────────────────────────────────
@@ -224,10 +181,9 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (feLargeWin)  { feLargeWin.removeAllListeners('close');  feLargeWin.close(); }
-  if (clWin)       { clWin.removeAllListeners('close');       clWin.close(); }
-  if (spWin)       { spWin.removeAllListeners('close');       spWin.close(); }
-  if (chartsWin)   { chartsWin.removeAllListeners('close');   chartsWin.close(); }
+  if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
+  if (ipadWin)    { ipadWin.removeAllListeners('close');    ipadWin.close(); }
+  if (chartsWin)  { chartsWin.removeAllListeners('close');  chartsWin.close(); }
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -239,7 +195,6 @@ ipcMain.on('set-ignore-mouse', (_e, ignore) => {
   if (win) win.setIgnoreMouseEvents(ignore, { forward: true });
 });
 
-// Called when main bar shrinks to pill — hides Flight Eye windows
 ipcMain.on('hide-flighteye-windows', () => {
   feWasVisible      = !!(feWin      && feWin.isVisible());
   feLargeWasVisible = !!(feLargeWin && feLargeWin.isVisible());
@@ -247,26 +202,45 @@ ipcMain.on('hide-flighteye-windows', () => {
   if (feLargeWin && feLargeWin.isVisible()) feLargeWin.hide();
 });
 
-// Called when pill is clicked and bar is restored
 ipcMain.on('restore-flighteye-windows', () => {
   if (feWasVisible      && feWin)      feWin.show();
   if (feLargeWasVisible && feLargeWin) feLargeWin.show();
 });
 
 ipcMain.on('close-window', () => {
-  if (feLargeWin)  { feLargeWin.removeAllListeners('close');  feLargeWin.close(); }
-  if (clWin)       { clWin.removeAllListeners('close');       clWin.close(); }
-  if (spWin)       { spWin.removeAllListeners('close');       spWin.close(); }
-  if (chartsWin)   { chartsWin.removeAllListeners('close');   chartsWin.close(); }
-  if (feWin)  feWin.close();
-  if (win)    win.close();
+  if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
+  if (ipadWin)    { ipadWin.removeAllListeners('close');    ipadWin.close(); }
+  if (chartsWin)  { chartsWin.removeAllListeners('close');  chartsWin.close(); }
+  if (feWin) feWin.close();
+  if (win)   win.close();
 });
 
-// Toggle small — also hides large if open
 ipcMain.on('toggle-flighteye', () => {
   if (feLargeWin && feLargeWin.isVisible()) feLargeWin.hide();
   if (!feWin) { createFlightEyeWindow(); return; }
   if (feWin.isVisible()) feWin.hide(); else feWin.show();
+});
+
+ipcMain.on('toggle-flighteye-large', () => {
+  if (feWin && feWin.isVisible()) feWin.hide();
+  if (!feLargeWin) { createFlightEyeLargeWindow(); return; }
+  if (feLargeWin.isVisible()) {
+    saveBoundsOf('feLarge', feLargeWin);
+    feLargeWin.hide();
+    if (feWin) feWin.show(); else createFlightEyeWindow();
+  } else {
+    feLargeWin.show();
+  }
+});
+
+ipcMain.on('toggle-ipad', () => {
+  if (!ipadWin) { createIpadWindow(); return; }
+  if (ipadWin.isVisible()) {
+    saveBoundsOf('ipad', ipadWin);
+    ipadWin.hide();
+  } else {
+    ipadWin.show();
+  }
 });
 
 ipcMain.on('toggle-charts', () => {
@@ -279,37 +253,9 @@ ipcMain.on('toggle-charts', () => {
   }
 });
 
-ipcMain.on('toggle-scratchpad', () => {
-  if (!spWin) { createScratchpadWindow(); return; }
-  if (spWin.isVisible()) {
-    saveBoundsOf('scratchpad', spWin);
-    spWin.hide();
-  } else {
-    spWin.show();
-  }
-});
-
-ipcMain.on('toggle-checklist', () => {
-  if (!clWin) { createChecklistWindow(); return; }
-  if (clWin.isVisible()) {
-    saveBoundsOf('checklist', clWin);
-    clWin.hide();
-  } else {
-    clWin.show();
-  }
-});
-
-// Toggle large — also hides small; restores small when large closes
-ipcMain.on('toggle-flighteye-large', () => {
-  if (feWin && feWin.isVisible()) feWin.hide();
-
-  if (!feLargeWin) { createFlightEyeLargeWindow(); return; }
-
-  if (feLargeWin.isVisible()) {
-    saveBoundsOf('feLarge', feLargeWin);
-    feLargeWin.hide();
-    if (feWin) feWin.show(); else createFlightEyeWindow();
-  } else {
-    feLargeWin.show();
+// Forward dispatch data from main window → iPad
+ipcMain.on('dispatch-data', (_e, data) => {
+  if (ipadWin && !ipadWin.isDestroyed()) {
+    ipadWin.webContents.send('dispatch-data', data);
   }
 });

@@ -429,27 +429,7 @@
       color: #ffffff;
     }
 
-    #bar-checklist-btn {
-      background: none;
-      border: 1px solid #e3b341;
-      border-radius: 4px;
-      color: #e3b341;
-      cursor: pointer;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 2px 8px;
-      height: 28px;
-      white-space: nowrap;
-      letter-spacing: 0.03em;
-      transition: all 0.15s;
-    }
-
-    #bar-checklist-btn:hover {
-      background-color: #e3b341;
-      color: #0d1117;
-    }
-
-    #bar-scratchpad-btn {
+    #bar-ipad-btn {
       background: none;
       border: 1px solid #a5d6ff;
       border-radius: 4px;
@@ -464,7 +444,7 @@
       transition: all 0.15s;
     }
 
-    #bar-scratchpad-btn:hover {
+    #bar-ipad-btn:hover {
       background-color: #a5d6ff;
       color: #0d1117;
     }
@@ -538,8 +518,7 @@
     </div>
     <button id="bar-flighteye-btn" title="Toggle small Flight Eye widget">👁 Flight Eye</button>
     <button id="bar-femap-btn" title="Toggle large Flight Eye map">🗺 Large Map</button>
-    <button id="bar-checklist-btn" title="Toggle checklist">📋 Checklist</button>
-    <button id="bar-scratchpad-btn" title="Toggle scratchpad">✏ Pad</button>
+    <button id="bar-ipad-btn" title="Toggle iPad">📱 iPad</button>
     <button id="bar-charts-btn" title="Toggle charts">📊 Charts</button>
     <button id="bar-expand-btn">▼</button>
     <button id="bar-shrink-btn" title="Minimise to pill">⊟</button>
@@ -777,6 +756,14 @@
     const routeEl = document.getElementById("route");
     const commandOutputEl = document.getElementById("command-output");
 
+    function getIcao(name) {
+      for (const airports of Object.values(AIRPORTS)) {
+        const found = airports.find(a => a.name === name);
+        if (found) return found.icao;
+      }
+      return '';
+    }
+
     function buildCommand() {
       const ingameCallsign = ingameCallsignEl.value;
       const callsign = callsignEl.value;
@@ -809,6 +796,20 @@
         commandOutputEl.textContent = buildCommand();
         commandOutputEl.style.color = "#3fb950";
       }
+
+      window.electronAPI?.sendDispatchData({
+        callsign,
+        ingame:   ingameCallsign,
+        aircraft,
+        rules:    flightRules,
+        depName:  departing,
+        depIcao:  getIcao(departing),
+        arrName:  arriving,
+        arrIcao:  getIcao(arriving),
+        fl:       flightLevel,
+        route,
+        command:  allFilled ? buildCommand() : '',
+      });
     }
 
     [ingameCallsignEl, callsignEl, aircraftEl, flightRulesEl,
@@ -1086,12 +1087,8 @@
       window.electronAPI?.toggleFlightEyeLarge();
     });
 
-    document.getElementById("bar-checklist-btn").addEventListener("click", () => {
-      window.electronAPI?.toggleChecklist();
-    });
-
-    document.getElementById("bar-scratchpad-btn").addEventListener("click", () => {
-      window.electronAPI?.toggleScratchpad();
+    document.getElementById("bar-ipad-btn").addEventListener("click", () => {
+      window.electronAPI?.toggleIpad();
     });
 
     document.getElementById("bar-charts-btn").addEventListener("click", () => {
