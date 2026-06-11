@@ -469,6 +469,26 @@
       color: #0d1117;
     }
 
+    #bar-charts-btn {
+      background: none;
+      border: 1px solid #3fb950;
+      border-radius: 4px;
+      color: #3fb950;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      height: 28px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+      transition: all 0.15s;
+    }
+
+    #bar-charts-btn:hover {
+      background-color: #3fb950;
+      color: #0d1117;
+    }
+
     #bar-pill {
       display: none;
       position: fixed;
@@ -520,6 +540,7 @@
     <button id="bar-femap-btn" title="Toggle large Flight Eye map">🗺 Large Map</button>
     <button id="bar-checklist-btn" title="Toggle checklist">📋 Checklist</button>
     <button id="bar-scratchpad-btn" title="Toggle scratchpad">✏ Pad</button>
+    <button id="bar-charts-btn" title="Toggle charts">📊 Charts</button>
     <button id="bar-expand-btn">▼</button>
     <button id="bar-shrink-btn" title="Minimise to pill">⊟</button>
     <button id="bar-close-btn" title="Close overlay">✕</button>
@@ -1071,6 +1092,10 @@
 
     document.getElementById("bar-scratchpad-btn").addEventListener("click", () => {
       window.electronAPI?.toggleScratchpad();
+    });
+
+    document.getElementById("bar-charts-btn").addEventListener("click", () => {
+      window.electronAPI?.toggleCharts();
     });
 
     function setExpanded(expanded) {

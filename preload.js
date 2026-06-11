@@ -8,6 +8,7 @@ try {
     toggleFlightEyeLarge: () => ipcRenderer.send('toggle-flighteye-large'),
     toggleChecklist: () => ipcRenderer.send('toggle-checklist'),
     toggleScratchpad: () => ipcRenderer.send('toggle-scratchpad'),
+    toggleCharts: () => ipcRenderer.send('toggle-charts'),
     hideFlightEyeWindows: () => ipcRenderer.send('hide-flighteye-windows'),
     restoreFlightEyeWindows: () => ipcRenderer.send('restore-flighteye-windows'),
   });

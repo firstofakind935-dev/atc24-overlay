@@ -13,6 +13,7 @@ let feWin;
 let feLargeWin;
 let clWin;
 let spWin;
+let chartsWin;
 
 // ─── Persistent bounds ────────────────────────────────────────────────────────
 let settingsPath;
@@ -100,6 +101,38 @@ function createFlightEyeLargeWindow() {
   });
 
   feLargeWin.on('closed', () => { feLargeWin = null; });
+}
+
+// ─── Charts popup ────────────────────────────────────────────────────────────
+function createChartsWindow() {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const def = { width: Math.round(width * 0.7), height: Math.round(height * 0.8),
+                x: Math.round(width * 0.15), y: 60 };
+  const b = getBounds('charts', def);
+
+  chartsWin = new BrowserWindow({
+    width: b.width, height: b.height, x: b.x, y: b.y,
+    frame: false, transparent: false,
+    resizable: true, movable: true,
+    skipTaskbar: true, hasShadow: true,
+    webPreferences: { contextIsolation: true, nodeIntegration: false, webviewTag: true },
+  });
+
+  chartsWin.loadFile('charts.html');
+  chartsWin.setAlwaysOnTop(true, 'pop-up-menu');
+
+  chartsWin.on('resize', () => saveBoundsOf('charts', chartsWin));
+  chartsWin.on('move',   () => saveBoundsOf('charts', chartsWin));
+  chartsWin.on('minimize', () => {
+    saveBoundsOf('charts', chartsWin);
+    chartsWin.hide();
+  });
+  chartsWin.on('close', (e) => {
+    e.preventDefault();
+    saveBoundsOf('charts', chartsWin);
+    chartsWin.hide();
+  });
+  chartsWin.on('closed', () => { chartsWin = null; });
 }
 
 // ─── Scratchpad popup ────────────────────────────────────────────────────────
@@ -191,9 +224,10 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
-  if (clWin)      { clWin.removeAllListeners('close');      clWin.close(); }
-  if (spWin)      { spWin.removeAllListeners('close');      spWin.close(); }
+  if (feLargeWin)  { feLargeWin.removeAllListeners('close');  feLargeWin.close(); }
+  if (clWin)       { clWin.removeAllListeners('close');       clWin.close(); }
+  if (spWin)       { spWin.removeAllListeners('close');       spWin.close(); }
+  if (chartsWin)   { chartsWin.removeAllListeners('close');   chartsWin.close(); }
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -220,9 +254,10 @@ ipcMain.on('restore-flighteye-windows', () => {
 });
 
 ipcMain.on('close-window', () => {
-  if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
-  if (clWin)      { clWin.removeAllListeners('close');      clWin.close(); }
-  if (spWin)      { spWin.removeAllListeners('close');      spWin.close(); }
+  if (feLargeWin)  { feLargeWin.removeAllListeners('close');  feLargeWin.close(); }
+  if (clWin)       { clWin.removeAllListeners('close');       clWin.close(); }
+  if (spWin)       { spWin.removeAllListeners('close');       spWin.close(); }
+  if (chartsWin)   { chartsWin.removeAllListeners('close');   chartsWin.close(); }
   if (feWin)  feWin.close();
   if (win)    win.close();
 });
@@ -232,6 +267,16 @@ ipcMain.on('toggle-flighteye', () => {
   if (feLargeWin && feLargeWin.isVisible()) feLargeWin.hide();
   if (!feWin) { createFlightEyeWindow(); return; }
   if (feWin.isVisible()) feWin.hide(); else feWin.show();
+});
+
+ipcMain.on('toggle-charts', () => {
+  if (!chartsWin) { createChartsWindow(); return; }
+  if (chartsWin.isVisible()) {
+    saveBoundsOf('charts', chartsWin);
+    chartsWin.hide();
+  } else {
+    chartsWin.show();
+  }
 });
 
 ipcMain.on('toggle-scratchpad', () => {
