@@ -779,7 +779,7 @@
           </p>
           <div class="ds-signs">
             <div class="ds-sign">
-              <div class="sig" id="sig-dispatch">Cmaci Dispatch</div>
+              <div class="sig" id="sig-dispatch">ATC24 Dispatch</div>
               <div class="sig-label">Dispatcher</div>
             </div>
             <div class="ds-sign">
@@ -1068,7 +1068,7 @@
       document.getElementById('ds-airline-label').textContent =
         airline ? `${airline} · Operational Flight Plan` : 'ATC24 · Operational Flight Plan';
       document.getElementById('sig-dispatch').textContent =
-        airline ? `${airline} Dispatch` : 'Cmaci Dispatch';
+        airline ? `${airline} Dispatch` : 'ATC24 Dispatch';
 
       const hasData = d.callsign || d.depName || d.arrName;
       document.getElementById('dispatch-placeholder').style.display = hasData ? 'none' : 'flex';
