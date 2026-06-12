@@ -946,6 +946,7 @@
       routeEl.value = "";
       depRunwayEl.value = "";
       arrRunwayEl.value = "";
+      localStorage.removeItem("fp-state");
       updateCommand();
       updateVSpeeds();
       setExpanded(false);
@@ -1088,6 +1089,58 @@
     callsignEl.addEventListener("input",  updateBar);
 
     updateBar();
+
+    // ── Persist flight plan across restarts ───────────────────────────────────
+    const FP_KEY = 'fp-state';
+
+    function saveForm() {
+      localStorage.setItem(FP_KEY, JSON.stringify({
+        ingame:     ingameCallsignEl.value,
+        callsign:   callsignEl.value,
+        aircraft:   aircraftEl.value,
+        rules:      flightRulesEl.value,
+        depRegion:  depRegionEl.value,
+        depAirport: depAirportEl.value,
+        arrRegion:  arrRegionEl.value,
+        arrAirport: arrAirportEl.value,
+        fl:         flightLevelEl.value,
+        route:      routeEl.value,
+        depRwy:     depRunwayEl.value,
+        arrRwy:     arrRunwayEl.value,
+      }));
+    }
+
+    [ingameCallsignEl, callsignEl, aircraftEl, flightRulesEl,
+     depRegionEl, depAirportEl, arrRegionEl, arrAirportEl,
+     flightLevelEl, routeEl, depRunwayEl, arrRunwayEl
+    ].forEach(el => {
+      el.addEventListener("input",  saveForm);
+      el.addEventListener("change", saveForm);
+    });
+
+    (function restoreForm() {
+      let d = null;
+      try { d = JSON.parse(localStorage.getItem(FP_KEY) || "null"); } catch {}
+      if (!d) return;
+      ingameCallsignEl.value = d.ingame   || "";
+      callsignEl.value       = d.callsign || "";
+      aircraftEl.value       = d.aircraft || "";
+      depRegionEl.value      = d.depRegion || "";
+      populateAirports(depRegionEl, depAirportEl);
+      depAirportEl.value     = d.depAirport || "";
+      arrRegionEl.value      = d.arrRegion || "";
+      populateAirports(arrRegionEl, arrAirportEl);
+      arrAirportEl.value     = d.arrAirport || "";
+      flightLevelEl.value    = d.fl       || "";
+      routeEl.value          = d.route    || "";
+      depRunwayEl.value      = d.depRwy   || "";
+      arrRunwayEl.value      = d.arrRwy   || "";
+      flightRulesEl.value    = d.rules    || "";
+      updateFlightRulesForAircraft();
+      updateVSpeeds();
+      updateBar();
+      updateCommand();
+    })();
   </script>
 </body>
 </html>
