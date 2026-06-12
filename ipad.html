@@ -684,7 +684,7 @@
       <div id="dispatch-sheet">
         <div class="ds-header">
           <div>
-            <div class="ds-airline">ATC24 · Operational Flight Plan</div>
+            <div class="ds-airline" id="ds-airline-label">ATC24 · Operational Flight Plan</div>
             <div class="ds-title">DISPATCH COPY — NOT FOR NAVIGATION</div>
           </div>
           <div class="ds-datetime">
@@ -779,7 +779,7 @@
           </p>
           <div class="ds-signs">
             <div class="ds-sign">
-              <div class="sig">Cmaci Dispatch</div>
+              <div class="sig" id="sig-dispatch">Cmaci Dispatch</div>
               <div class="sig-label">Dispatcher</div>
             </div>
             <div class="ds-sign">
@@ -972,6 +972,45 @@
              `-${d.arrIcao})`;
     }
 
+    // Airline lookup — ICAO prefix or airline name typed in the callsign
+    const AIRLINES = {
+      KAL: 'Korean Air',        AAL: 'American Airlines', DAL: 'Delta Air Lines',
+      UAL: 'United Airlines',   BAW: 'British Airways',   VIR: 'Virgin Atlantic',
+      DLH: 'Lufthansa',         AFR: 'Air France',        KLM: 'KLM',
+      UAE: 'Emirates',          QTR: 'Qatar Airways',     ETD: 'Etihad Airways',
+      SIA: 'Singapore Airlines',CPA: 'Cathay Pacific',    ANA: 'All Nippon Airways',
+      JAL: 'Japan Airlines',    QFA: 'Qantas',            ACA: 'Air Canada',
+      SWA: 'Southwest Airlines',JBU: 'JetBlue',           RYR: 'Ryanair',
+      EZY: 'easyJet',           WZZ: 'Wizz Air',          THY: 'Turkish Airlines',
+      SVA: 'Saudia',            ETH: 'Ethiopian Airlines',ANZ: 'Air New Zealand',
+      EVA: 'EVA Air',           CSN: 'China Southern',    CCA: 'Air China',
+      CES: 'China Eastern',     AIC: 'Air India',         MAS: 'Malaysia Airlines',
+      THA: 'Thai Airways',      GIA: 'Garuda Indonesia',  PAL: 'Philippine Airlines',
+      HVN: 'Vietnam Airlines',  IBE: 'Iberia',            TAP: 'TAP Air Portugal',
+      SAS: 'Scandinavian Airlines', FIN: 'Finnair',       AUA: 'Austrian Airlines',
+      SWR: 'Swiss',             EIN: 'Aer Lingus',        ICE: 'Icelandair',
+      LOT: 'LOT Polish Airlines', AEE: 'Aegean Airlines', MSR: 'EgyptAir',
+      RAM: 'Royal Air Maroc',   ELY: 'El Al',             FDX: 'FedEx Express',
+      UPS: 'UPS Airlines',      GTI: 'Atlas Air',         CLX: 'Cargolux',
+      ASA: 'Alaska Airlines',   HAL: 'Hawaiian Airlines', FFT: 'Frontier Airlines',
+      NKS: 'Spirit Airlines',   VOI: 'Volaris',           AMX: 'Aeroméxico',
+      AVA: 'Avianca',           LAN: 'LATAM',             GLO: 'GOL',
+      AZU: 'Azul',              ARG: 'Aerolíneas Argentinas',
+    };
+
+    function resolveAirline(callsign) {
+      if (!callsign) return null;
+      const cs = callsign.toUpperCase().trim();
+      // ICAO prefix match, e.g. "KAL123"
+      const prefix = (cs.match(/^[A-Z]{3}/) || [])[0];
+      if (prefix && AIRLINES[prefix]) return AIRLINES[prefix];
+      // Name match, e.g. "Korean Air 123"
+      for (const name of Object.values(AIRLINES)) {
+        if (cs.includes(name.toUpperCase())) return name;
+      }
+      return null;
+    }
+
     // Plausible block-fuel figures by aircraft category (ATC24 flights are short)
     function estimateFuel(d) {
       const ac = (d.aircraft || '').toUpperCase();
@@ -1024,6 +1063,12 @@
       document.getElementById('fu-block').textContent = fu ? fmt(fu.block) : '—';
 
       document.getElementById('sig-pic').textContent = d.ingame || d.callsign || '—';
+
+      const airline = resolveAirline(d.callsign) || resolveAirline(d.ingame);
+      document.getElementById('ds-airline-label').textContent =
+        airline ? `${airline} · Operational Flight Plan` : 'ATC24 · Operational Flight Plan';
+      document.getElementById('sig-dispatch').textContent =
+        airline ? `${airline} Dispatch` : 'Cmaci Dispatch';
 
       const hasData = d.callsign || d.depName || d.arrName;
       document.getElementById('dispatch-placeholder').style.display = hasData ? 'none' : 'flex';
