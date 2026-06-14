@@ -1435,7 +1435,7 @@
       const extra  = data.freight ? 0 : Math.round((bdHash(key + 'c') % 41) / 100 * data.cargo);
       return {
         aircraft: ac, key, freight: !!data.freight, seats: data.seats,
-        target, boarded: 0, cargo: data.cargo + extra, oew: data.oew,
+        target, boarded: 0, boarding: false, cargo: data.cargo + extra, oew: data.oew,
         lf: Math.round(lf * 100),
       };
     }
@@ -1465,9 +1465,11 @@
     function bdStart() {
       if (!bdState || bdState.freight || bdState.boarded >= bdState.target || bdTimer) return;
       bdEnsureAudio();
+      bdState.boarding = true; bdSave();
       bdTimer = setInterval(() => {
         if (bdState.boarded >= bdState.target) {
-          clearInterval(bdTimer); bdTimer = null; bdSave(); bdBeginFinalize(); return;
+          clearInterval(bdTimer); bdTimer = null;
+          bdState.boarding = false; bdSave(); bdBeginFinalize(); return;
         }
         const burst = Math.max(1, Math.round(bdState.target / 150));
         bdState.boarded = Math.min(bdState.target, bdState.boarded + burst);
@@ -1480,6 +1482,7 @@
       bdEnsureAudio();
       if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
       bdState.boarded = bdState.target;
+      bdState.boarding = false;
       bdSave(); bdBeginFinalize();
     }
 
@@ -1489,6 +1492,7 @@
       bdClearFinalize();
       bdSecured = false;
       bdState.boarded = 0;
+      bdState.boarding = false;
       bdSave(); bdRender();
     }
 
@@ -1577,6 +1581,11 @@
     document.getElementById('bd-reset').addEventListener('click', bdReset);
 
     bdRender();
+
+    // Resume boarding that was interrupted by a full close/restart
+    if (bdState && bdState.boarding && !bdState.freight && bdState.boarded < bdState.target) {
+      bdStart();
+    }
 
     // ════════════════════════════════════
     // CHECKLIST
