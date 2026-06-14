@@ -1402,10 +1402,10 @@
         if (bdState.boarded >= bdState.target) {
           clearInterval(bdTimer); bdTimer = null; bdSave(); bdRender(); return;
         }
-        const burst = Math.max(1, Math.round(bdState.target / 55));
+        const burst = Math.max(1, Math.round(bdState.target / 120));
         bdState.boarded = Math.min(bdState.target, bdState.boarded + burst);
         bdSave(); bdRender();
-      }, 200);
+      }, 400);
     }
 
     function bdBoardAll() {
