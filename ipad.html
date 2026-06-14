@@ -1367,36 +1367,25 @@
     let bdFinalizeEnd = 0;     // timestamp when the completion chime fires (0 = inactive)
     let bdFinalizeTO  = null;  // setTimeout handle for the chime
     let bdCountdownIV = null;  // setInterval handle for the doors-closing countdown
-    let bdAudioCtx    = null;
-    try { bdState = JSON.parse(localStorage.getItem('bd-state') || 'null'); } catch {}
+    const bdChime = new Audio('Airplane Ding Dong Sound Effect.mp3');
+    bdChime.preload = 'auto';
 
+    // Unlock playback on the user's first boarding click (autoplay policy)
     function bdEnsureAudio() {
       try {
-        if (!bdAudioCtx) bdAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (bdAudioCtx.state === 'suspended') bdAudioCtx.resume();
+        bdChime.muted = true;
+        bdChime.play().then(() => {
+          bdChime.pause();
+          bdChime.currentTime = 0;
+          bdChime.muted = false;
+        }).catch(() => { bdChime.muted = false; });
       } catch (e) {}
     }
 
-    // Two-tone cabin "bing-bong" chime, synthesized — no audio file needed
     function bdPlayChime() {
       try {
-        bdEnsureAudio();
-        const ctx = bdAudioCtx;
-        if (!ctx) return;
-        const now = ctx.currentTime;
-        [523.25, 415.30].forEach((f, i) => {       // C5 then G#4
-          const osc  = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.value = f;
-          osc.connect(gain); gain.connect(ctx.destination);
-          const t = now + i * 0.45;
-          gain.gain.setValueAtTime(0.0001, t);
-          gain.gain.exponentialRampToValueAtTime(0.4, t + 0.01);
-          gain.gain.exponentialRampToValueAtTime(0.0006, t + 1.6);
-          osc.start(t);
-          osc.stop(t + 1.7);
-        });
+        bdChime.currentTime = 0;
+        bdChime.play().catch(() => {});
       } catch (e) {}
     }
 
