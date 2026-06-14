@@ -1327,7 +1327,7 @@
       document.getElementById('dispatch-placeholder').style.display = hasData ? 'none' : 'flex';
       document.getElementById('dispatch-sheet').style.display = hasData ? 'block' : 'none';
 
-      bdOnAircraft(d.aircraft);
+      bdOnFlight(d);
     }
 
     window.ipadAPI?.onDispatchData(renderDispatch);
@@ -1420,30 +1420,45 @@
       else localStorage.removeItem('bd-state');
     }
 
-    function bdCompute(ac) {
+    // Deterministic 32-bit hash (FNV-1a) so the same flight plan always yields the same pax
+    function bdHash(s) {
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return h >>> 0;
+    }
+
+    function bdCompute(ac, key) {
       const data = ACFT[ac];
       if (!data) return null;
-      const lf = 0.78 + Math.random() * 0.18;                 // 78–96% load factor
+      const lf    = 0.78 + (bdHash(key) % 1801) / 10000;        // deterministic 78–96%
       const target = data.freight ? 0 : Math.round(data.seats * lf);
-      const extra  = data.freight ? 0 : Math.round(Math.random() * data.cargo * 0.4);
+      const extra  = data.freight ? 0 : Math.round((bdHash(key + 'c') % 41) / 100 * data.cargo);
       return {
-        aircraft: ac, freight: !!data.freight, seats: data.seats,
+        aircraft: ac, key, freight: !!data.freight, seats: data.seats,
         target, boarded: 0, cargo: data.cargo + extra, oew: data.oew,
         lf: Math.round(lf * 100),
       };
     }
 
-    function bdOnAircraft(name) {
-      const ac = (name || '').toUpperCase();
+    // Identity of a flight plan — pax stays constant as long as this is unchanged
+    function bdFlightKey(d) {
+      const ac = (d.aircraft || '').toUpperCase();
+      return [ac, (d.callsign || '').toUpperCase().trim(),
+              (d.depIcao || '').toUpperCase(), (d.arrIcao || '').toUpperCase()].join('|');
+    }
+
+    function bdOnFlight(d) {
+      const ac = (d.aircraft || '').toUpperCase();
       if (!ac || !ACFT[ac]) {
         if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
         bdClearFinalize(); bdSecured = false;
         bdState = null; bdSave(); bdRender(); return;
       }
-      if (bdState && bdState.aircraft === ac) { bdRender(); return; }  // unchanged → keep progress
+      const key = bdFlightKey(d);
+      if (bdState && bdState.key === key) { bdRender(); return; }  // same flight → keep progress
       if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
       bdClearFinalize(); bdSecured = false;
-      bdState = bdCompute(ac);
+      bdState = bdCompute(ac, key);
       bdSave(); bdRender();
     }
 
