@@ -34,6 +34,23 @@ function getBounds(key, defaults) {
   return Object.assign({}, defaults, boundsCache[key] || {});
 }
 
+// ─── Persistent boarding state ────────────────────────────────────────────────
+let boardingPath;
+let boardingState = null;
+
+function initBoarding() {
+  boardingPath = path.join(app.getPath('userData'), 'boarding.json');
+  try { boardingState = JSON.parse(fs.readFileSync(boardingPath, 'utf8')); }
+  catch { boardingState = null; }
+}
+
+function persistBoarding() {
+  try {
+    if (boardingState) fs.writeFileSync(boardingPath, JSON.stringify(boardingState));
+    else if (fs.existsSync(boardingPath)) fs.unlinkSync(boardingPath);
+  } catch {}
+}
+
 // ─── Small Flight Eye widget ──────────────────────────────────────────────────
 function createFlightEyeWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -154,6 +171,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   initSettings();
+  initBoarding();
   createWindow();
 });
 
@@ -229,6 +247,9 @@ ipcMain.on('show-ipad', () => {
 ipcMain.on('cabin-secured', () => {
   if (win) win.webContents.send('cabin-secured');
 });
+
+ipcMain.on('get-boarding', (e) => { e.returnValue = boardingState; });
+ipcMain.on('save-boarding', (_e, data) => { boardingState = data; persistBoarding(); });
 
 // Forward dispatch data from main window → iPad (cache so late-opening iPad gets it)
 let lastDispatchData = null;

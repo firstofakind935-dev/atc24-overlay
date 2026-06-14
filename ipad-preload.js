@@ -6,6 +6,8 @@ try {
     minimizeIpad: () => ipcRenderer.send('minimize-ipad'),
     showIpad: () => ipcRenderer.send('show-ipad'),
     cabinSecured: () => ipcRenderer.send('cabin-secured'),
+    getBoarding: () => ipcRenderer.sendSync('get-boarding'),
+    saveBoarding: (data) => ipcRenderer.send('save-boarding', data),
   });
 } catch (e) {
   console.error('Failed to expose ipadAPI:', e);

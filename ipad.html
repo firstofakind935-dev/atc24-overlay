@@ -1373,6 +1373,7 @@
     let bdFinalizeTO  = null;  // setTimeout handle for the chime
     let bdCountdownIV = null;  // setInterval handle for the doors-closing countdown
     let bdSecured     = false; // cabin secured (after the chime)
+    try { bdState = window.ipadAPI?.getBoarding?.() || null; } catch {}
     const bdChime = new Audio('Airplane Ding Dong Sound Effect.mp3');
     bdChime.preload = 'auto';
 
@@ -1416,8 +1417,7 @@
     }
 
     function bdSave() {
-      if (bdState) localStorage.setItem('bd-state', JSON.stringify(bdState));
-      else localStorage.removeItem('bd-state');
+      try { window.ipadAPI?.saveBoarding?.(bdState || null); } catch {}
     }
 
     // Deterministic 32-bit hash (FNV-1a) so the same flight plan always yields the same pax
