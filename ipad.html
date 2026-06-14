@@ -639,6 +639,202 @@
       cursor: crosshair;
       display: block;
     }
+
+    /* ════════════════════════════════════
+       BOARDING PANEL
+    ════════════════════════════════════ */
+    #panel-boarding {
+      overflow-y: auto;
+      background: #0d1117;
+      padding: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+    }
+    #panel-boarding::-webkit-scrollbar { width: 4px; }
+    #panel-boarding::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+
+    #bd-placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #8b949e;
+      text-align: center;
+    }
+    #bd-placeholder .ph-icon { font-size: 2.5rem; }
+    #bd-placeholder p { font-size: 0.82rem; line-height: 1.5; max-width: 260px; }
+
+    #bd-body { display: none; }
+
+    .bd-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .bd-acft {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #e6edf3;
+      letter-spacing: 0.03em;
+    }
+    .bd-acft span {
+      display: block;
+      font-size: 0.66rem;
+      font-weight: 500;
+      color: #8b949e;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .bd-status {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid #30363d;
+      color: #8b949e;
+    }
+    .bd-status.boarding { color: #e3b341; border-color: #e3b341; }
+    .bd-status.done     { color: #3fb950; border-color: #3fb950; }
+
+    /* Big counter */
+    .bd-counter {
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .bd-count-num {
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: #3fb950;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .bd-count-num span { color: #8b949e; font-size: 1.4rem; font-weight: 700; }
+    .bd-count-label {
+      font-size: 0.66rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+
+    /* Progress bar */
+    .bd-bar {
+      height: 12px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 12px 0 4px;
+    }
+    .bd-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #2ea043, #3fb950);
+      border-radius: 7px;
+      transition: width 0.25s ease;
+    }
+    .bd-pct {
+      text-align: right;
+      font-size: 0.7rem;
+      color: #8b949e;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Zones */
+    .bd-zones {
+      display: flex;
+      gap: 6px;
+      margin: 14px 0;
+    }
+    .bd-zone {
+      flex: 1;
+      text-align: center;
+      padding: 7px 0;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+      background: #161b22;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #8b949e;
+      transition: all 0.25s;
+    }
+    .bd-zone .bd-zone-state { font-size: 0.54rem; display: block; margin-top: 2px; font-weight: 500; }
+    .bd-zone.active {
+      border-color: #e3b341;
+      color: #e3b341;
+      box-shadow: 0 0 0 1px #e3b341 inset;
+    }
+    .bd-zone.done {
+      border-color: #3fb950;
+      background: rgba(63,185,80,0.12);
+      color: #3fb950;
+    }
+
+    /* Controls */
+    .bd-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .bd-btn {
+      flex: 1;
+      padding: 9px 0;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      background: #161b22;
+      color: #e6edf3;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      transition: all 0.15s;
+    }
+    .bd-btn-go     { background: #238636; border-color: #2ea043; }
+    .bd-btn-go:hover     { background: #2ea043; }
+    .bd-btn:hover  { border-color: #58a6ff; }
+    .bd-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .bd-btn-go:disabled:hover { background: #238636; }
+
+    /* Load sheet */
+    .bd-loadsheet {
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .bd-ls-title {
+      background: #161b22;
+      padding: 7px 12px;
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #58a6ff;
+      font-weight: 700;
+      border-bottom: 1px solid #30363d;
+    }
+    .bd-ls-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      color: #e6edf3;
+      border-bottom: 1px solid #161b22;
+    }
+    .bd-ls-row:last-child { border-bottom: none; }
+    .bd-ls-row .lbl { color: #8b949e; }
+    .bd-ls-row .val { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .bd-ls-row.total {
+      background: #161b22;
+      font-weight: 800;
+    }
+    .bd-ls-row.total .lbl { color: #e6edf3; }
+    .bd-ls-row.zfw .val { color: #3fb950; }
   </style>
 </head>
 <body>
@@ -667,6 +863,7 @@
   <!-- ── Tab bar ── -->
   <div id="ipad-tabbar">
     <div class="ipad-tab active" data-tab="dispatch">📄 Dispatch</div>
+    <div class="ipad-tab"        data-tab="boarding">🧳 Boarding</div>
     <div class="ipad-tab"        data-tab="checklist">✅ Checklist</div>
     <div class="ipad-tab"        data-tab="pad">✏ Pad</div>
     <div class="ipad-tab"        data-tab="charts">🗺 Charts</div>
@@ -897,6 +1094,56 @@
       <webview id="charts-webview" allowpopups></webview>
     </div>
 
+    <!-- BOARDING -->
+    <div class="panel" id="panel-boarding">
+      <div id="bd-placeholder">
+        <div class="ph-icon">🧳</div>
+        <p>Select an aircraft in the flight plan generator to begin passenger boarding.</p>
+      </div>
+
+      <div id="bd-body">
+        <div class="bd-head">
+          <div class="bd-acft">
+            <span id="bd-acft-name">—</span>
+            <span id="bd-acft-cap">—</span>
+          </div>
+          <div class="bd-status" id="bd-status">Ready</div>
+        </div>
+
+        <div class="bd-counter">
+          <div class="bd-count-num"><span id="bd-boarded">0</span> / <span id="bd-target">0</span></div>
+          <div class="bd-count-label" id="bd-count-label">Passengers boarded</div>
+        </div>
+
+        <div class="bd-bar"><div class="bd-bar-fill" id="bd-bar-fill"></div></div>
+        <div class="bd-pct" id="bd-pct">0%</div>
+
+        <div class="bd-zones" id="bd-zones">
+          <div class="bd-zone" data-zone="0">GRP 1<span class="bd-zone-state">Waiting</span></div>
+          <div class="bd-zone" data-zone="1">GRP 2<span class="bd-zone-state">Waiting</span></div>
+          <div class="bd-zone" data-zone="2">GRP 3<span class="bd-zone-state">Waiting</span></div>
+          <div class="bd-zone" data-zone="3">GRP 4<span class="bd-zone-state">Waiting</span></div>
+          <div class="bd-zone" data-zone="4">GRP 5<span class="bd-zone-state">Waiting</span></div>
+        </div>
+
+        <div class="bd-controls">
+          <button class="bd-btn bd-btn-go" id="bd-start">▶ Start Boarding</button>
+          <button class="bd-btn" id="bd-all">⏭ Board All</button>
+          <button class="bd-btn" id="bd-reset">↺ Reset</button>
+        </div>
+
+        <div class="bd-loadsheet">
+          <div class="bd-ls-title">Load &amp; Trim Sheet (kg)</div>
+          <div class="bd-ls-row"><span class="lbl">Passengers (<span id="ls-pax-n">0</span> @ 84)</span><span class="val" id="ls-pax">—</span></div>
+          <div class="bd-ls-row"><span class="lbl">Baggage (<span id="ls-bag-n">0</span> @ 15)</span><span class="val" id="ls-bag">—</span></div>
+          <div class="bd-ls-row"><span class="lbl">Cargo / Freight</span><span class="val" id="ls-cargo">—</span></div>
+          <div class="bd-ls-row total"><span class="lbl">Total Payload</span><span class="val" id="ls-payload">—</span></div>
+          <div class="bd-ls-row"><span class="lbl">Operating Empty Wt</span><span class="val" id="ls-oew">—</span></div>
+          <div class="bd-ls-row total zfw"><span class="lbl">Zero Fuel Weight</span><span class="val" id="ls-zfw">—</span></div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /ipad-content -->
 
   <!-- ── Home indicator ── -->
@@ -928,8 +1175,9 @@
         tab.classList.add('active');
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById('panel-' + t).classList.add('active');
-        if (t === 'pad')    initPad();
-        if (t === 'charts') initCharts();
+        if (t === 'pad')      initPad();
+        if (t === 'charts')   initCharts();
+        if (t === 'boarding') bdRender();
       });
     });
 
@@ -1073,9 +1321,181 @@
       const hasData = d.callsign || d.depName || d.arrName;
       document.getElementById('dispatch-placeholder').style.display = hasData ? 'none' : 'flex';
       document.getElementById('dispatch-sheet').style.display = hasData ? 'block' : 'none';
+
+      bdOnAircraft(d.aircraft);
     }
 
     window.ipadAPI?.onDispatchData(renderDispatch);
+
+    // ════════════════════════════════════
+    // BOARDING
+    // ════════════════════════════════════
+    // seats = typical 2-class capacity · oew = operating empty weight (kg) · cargo = belly hold (kg)
+    const ACFT = {
+      'A220':    { seats: 130, oew: 37000,  cargo: 600   },
+      'A320':    { seats: 180, oew: 42600,  cargo: 1500  },
+      'A330':    { seats: 280, oew: 120000, cargo: 4000  },
+      'A340':    { seats: 300, oew: 130000, cargo: 4000  },
+      'A350':    { seats: 325, oew: 142000, cargo: 5000  },
+      'A380':    { seats: 525, oew: 285000, cargo: 9000  },
+      'BELUGAXL':{ seats: 0,   oew: 127000, cargo: 50000, freight: true },
+      'B707':    { seats: 140, oew: 57000,  cargo: 1500  },
+      'B727':    { seats: 145, oew: 45000,  cargo: 1500  },
+      'B737':    { seats: 180, oew: 41400,  cargo: 1500  },
+      'B747':    { seats: 410, oew: 183000, cargo: 8000  },
+      'B757':    { seats: 200, oew: 58000,  cargo: 2000  },
+      'B767':    { seats: 260, oew: 86000,  cargo: 3500  },
+      'B777':    { seats: 370, oew: 138000, cargo: 6000  },
+      'B787':    { seats: 290, oew: 120000, cargo: 5000  },
+      'ATR-72':  { seats: 70,  oew: 13500,  cargo: 300   },
+      'CRJ700':  { seats: 70,  oew: 20000,  cargo: 300   },
+      'Q400':    { seats: 78,  oew: 17800,  cargo: 300   },
+      'L-1011':  { seats: 300, oew: 110000, cargo: 4000  },
+      'DC-10':   { seats: 290, oew: 122000, cargo: 4500  },
+      'MD-11':   { seats: 290, oew: 130000, cargo: 5000  },
+      'MD-90':   { seats: 160, oew: 40000,  cargo: 1200  },
+      'AN-22':   { seats: 0,   oew: 114000, cargo: 80000,  freight: true },
+      'AN-225':  { seats: 0,   oew: 285000, cargo: 250000, freight: true },
+      'COMET':   { seats: 80,  oew: 34000,  cargo: 800   },
+    };
+
+    const PAX_WT = 84;  // kg per pax incl. carry-on
+    const BAG_WT = 15;  // kg checked bag per pax
+
+    let bdState = null;
+    let bdTimer = null;
+    try { bdState = JSON.parse(localStorage.getItem('bd-state') || 'null'); } catch {}
+
+    function bdSave() {
+      if (bdState) localStorage.setItem('bd-state', JSON.stringify(bdState));
+      else localStorage.removeItem('bd-state');
+    }
+
+    function bdCompute(ac) {
+      const data = ACFT[ac];
+      if (!data) return null;
+      const lf = 0.78 + Math.random() * 0.18;                 // 78–96% load factor
+      const target = data.freight ? 0 : Math.round(data.seats * lf);
+      const extra  = data.freight ? 0 : Math.round(Math.random() * data.cargo * 0.4);
+      return {
+        aircraft: ac, freight: !!data.freight, seats: data.seats,
+        target, boarded: 0, cargo: data.cargo + extra, oew: data.oew,
+        lf: Math.round(lf * 100),
+      };
+    }
+
+    function bdOnAircraft(name) {
+      const ac = (name || '').toUpperCase();
+      if (!ac || !ACFT[ac]) {
+        if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
+        bdState = null; bdSave(); bdRender(); return;
+      }
+      if (bdState && bdState.aircraft === ac) { bdRender(); return; }  // unchanged → keep progress
+      if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
+      bdState = bdCompute(ac);
+      bdSave(); bdRender();
+    }
+
+    function bdStart() {
+      if (!bdState || bdState.freight || bdState.boarded >= bdState.target || bdTimer) return;
+      bdTimer = setInterval(() => {
+        if (bdState.boarded >= bdState.target) {
+          clearInterval(bdTimer); bdTimer = null; bdSave(); bdRender(); return;
+        }
+        const burst = Math.max(1, Math.round(bdState.target / 55));
+        bdState.boarded = Math.min(bdState.target, bdState.boarded + burst);
+        bdSave(); bdRender();
+      }, 200);
+    }
+
+    function bdBoardAll() {
+      if (!bdState) return;
+      if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
+      bdState.boarded = bdState.target;
+      bdSave(); bdRender();
+    }
+
+    function bdReset() {
+      if (!bdState) return;
+      if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
+      bdState.boarded = 0;
+      bdSave(); bdRender();
+    }
+
+    function bdRender() {
+      const ph   = document.getElementById('bd-placeholder');
+      const body = document.getElementById('bd-body');
+      if (!bdState) { ph.style.display = 'flex'; body.style.display = 'none'; return; }
+      ph.style.display = 'none'; body.style.display = 'block';
+
+      const s = bdState;
+      const complete = s.freight || s.boarded >= s.target;
+      const pct = s.target ? (s.boarded / s.target) * 100 : 100;
+
+      document.getElementById('bd-acft-name').textContent = s.aircraft;
+      document.getElementById('bd-acft-cap').textContent =
+        s.freight ? 'Freighter — cargo only'
+                  : `${s.seats} seats · ${s.lf}% load factor`;
+
+      // status pill
+      const statusEl = document.getElementById('bd-status');
+      statusEl.classList.remove('boarding', 'done');
+      if (s.freight)            { statusEl.textContent = 'Cargo';    statusEl.classList.add('done'); }
+      else if (complete)        { statusEl.textContent = 'Complete'; statusEl.classList.add('done'); }
+      else if (bdTimer)         { statusEl.textContent = 'Boarding'; statusEl.classList.add('boarding'); }
+      else if (s.boarded > 0)   { statusEl.textContent = 'Paused';   statusEl.classList.add('boarding'); }
+      else                      { statusEl.textContent = 'Ready'; }
+
+      // counter
+      document.getElementById('bd-boarded').textContent = s.freight ? '0' : s.boarded;
+      document.getElementById('bd-target').textContent  = s.freight ? '0' : s.target;
+      document.getElementById('bd-count-label').textContent =
+        s.freight ? 'Cargo flight — no passengers' : 'Passengers boarded';
+
+      document.getElementById('bd-bar-fill').style.width = `${pct}%`;
+      document.getElementById('bd-pct').textContent = `${Math.round(pct)}%`;
+
+      // zones (5 boarding groups)
+      const zonesDone = s.freight ? 5 : Math.floor(pct / 20);
+      document.querySelectorAll('#bd-zones .bd-zone').forEach((z, i) => {
+        z.classList.remove('active', 'done');
+        const st = z.querySelector('.bd-zone-state');
+        if (i < zonesDone)        { z.classList.add('done');   st.textContent = 'Boarded'; }
+        else if (i === zonesDone && !complete && (bdTimer || s.boarded > 0)) {
+                                    z.classList.add('active'); st.textContent = 'Boarding'; }
+        else                      {                            st.textContent = 'Waiting'; }
+      });
+
+      // controls
+      document.getElementById('bd-start').disabled = s.freight || complete;
+      document.getElementById('bd-all').disabled   = s.freight || complete;
+      document.getElementById('bd-reset').disabled = s.freight || s.boarded === 0;
+      document.getElementById('bd-start').textContent =
+        (!bdTimer && s.boarded > 0 && !complete) ? '▶ Resume Boarding' : '▶ Start Boarding';
+
+      // load sheet
+      const pax     = s.freight ? 0 : s.boarded;
+      const paxWt   = pax * PAX_WT;
+      const bagWt   = pax * BAG_WT;
+      const payload = paxWt + bagWt + s.cargo;
+      const zfw     = s.oew + payload;
+      const fmt = (n) => n.toLocaleString('en-US');
+
+      document.getElementById('ls-pax-n').textContent  = pax;
+      document.getElementById('ls-bag-n').textContent  = pax;
+      document.getElementById('ls-pax').textContent    = fmt(paxWt);
+      document.getElementById('ls-bag').textContent    = fmt(bagWt);
+      document.getElementById('ls-cargo').textContent  = fmt(s.cargo);
+      document.getElementById('ls-payload').textContent= fmt(payload);
+      document.getElementById('ls-oew').textContent    = fmt(s.oew);
+      document.getElementById('ls-zfw').textContent    = fmt(zfw);
+    }
+
+    document.getElementById('bd-start').addEventListener('click', bdStart);
+    document.getElementById('bd-all').addEventListener('click', bdBoardAll);
+    document.getElementById('bd-reset').addEventListener('click', bdReset);
+
+    bdRender();
 
     // ════════════════════════════════════
     // CHECKLIST
