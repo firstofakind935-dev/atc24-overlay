@@ -222,6 +222,10 @@ ipcMain.on('minimize-ipad', () => {
   if (ipadWin) { saveBoundsOf('ipad', ipadWin); ipadWin.hide(); }
 });
 
+ipcMain.on('show-ipad', () => {
+  if (ipadWin && !ipadWin.isVisible()) ipadWin.show();
+});
+
 // Forward dispatch data from main window → iPad (cache so late-opening iPad gets it)
 let lastDispatchData = null;
 
