@@ -1190,7 +1190,7 @@
     }
 
     // ── Window buttons ───────────────────────────────────────────────────────
-    document.getElementById('min-btn').addEventListener('click', () => window.minimize());
+    document.getElementById('min-btn').addEventListener('click', () => window.ipadAPI?.minimizeIpad());
     document.getElementById('close-btn').addEventListener('click', () => window.close());
 
     // ════════════════════════════════════

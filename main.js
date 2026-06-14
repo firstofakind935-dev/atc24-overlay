@@ -107,6 +107,7 @@ function createIpadWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'ipad-preload.js'),
       contextIsolation: true, nodeIntegration: false, webviewTag: true,
+      backgroundThrottling: false,   // keep boarding sim running while hidden
     },
   });
 
@@ -215,6 +216,10 @@ ipcMain.on('toggle-ipad', () => {
   } else {
     ipadWin.show();
   }
+});
+
+ipcMain.on('minimize-ipad', () => {
+  if (ipadWin) { saveBoundsOf('ipad', ipadWin); ipadWin.hide(); }
 });
 
 // Forward dispatch data from main window → iPad (cache so late-opening iPad gets it)
