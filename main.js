@@ -226,6 +226,10 @@ ipcMain.on('show-ipad', () => {
   if (ipadWin && !ipadWin.isVisible()) ipadWin.show();
 });
 
+ipcMain.on('cabin-secured', () => {
+  if (win) win.webContents.send('cabin-secured');
+});
+
 // Forward dispatch data from main window → iPad (cache so late-opening iPad gets it)
 let lastDispatchData = null;
 

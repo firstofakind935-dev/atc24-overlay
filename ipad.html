@@ -1409,7 +1409,7 @@
         bdClearFinalize();
         bdSecured = true;                            // cabin secured
         bdPlayChime();                               // ding — boarding complete
-        window.ipadAPI?.showIpad();                  // surface the iPad if minimized
+        window.ipadAPI?.cabinSecured();              // notify the overlay bar
         bdRender();
       }, 30000);
       bdRender();

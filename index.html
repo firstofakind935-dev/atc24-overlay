@@ -449,6 +449,31 @@
       color: #0d1117;
     }
 
+    #bar-status {
+      display: none;
+      align-items: center;
+      gap: 0.3rem;
+      flex-shrink: 0;
+      background: rgba(88, 166, 255, 0.15);
+      border: 1px solid #58a6ff;
+      border-radius: 20px;
+      color: #58a6ff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 3px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      animation: statusPulse 1.6s ease-in-out infinite;
+    }
+
+    #bar-status.show { display: flex; }
+
+    @keyframes statusPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0); }
+      50%      { box-shadow: 0 0 0 4px rgba(88, 166, 255, 0.18); }
+    }
+
     #bar-pill {
       display: none;
       position: fixed;
@@ -491,6 +516,7 @@
       <button class="phase-btn" id="phase-landing">🛬 LANDING</button>
     </div>
     <div id="bar-aircraft">— No aircraft —</div>
+    <div id="bar-status" title="Dismiss">🔔 Cabin Secured</div>
     <div id="bar-vspeeds">
       <span class="bar-vspeed"><span class="bar-vname" id="bar-name1">V1</span><span class="bar-vval" id="bar-val1">—</span></span>
       <span class="bar-vspeed"><span class="bar-vname" id="bar-name2">VR</span><span class="bar-vval" id="bar-val2">—</span></span>
@@ -1078,6 +1104,20 @@
     document.getElementById("bar-ipad-btn").addEventListener("click", () => {
       window.electronAPI?.toggleIpad();
     });
+
+    const barStatus = document.getElementById("bar-status");
+    let barStatusTimer = null;
+    function showBarStatus(text) {
+      barStatus.textContent = `🔔 ${text}`;
+      barStatus.classList.add("show");
+      if (barStatusTimer) clearTimeout(barStatusTimer);
+      barStatusTimer = setTimeout(() => barStatus.classList.remove("show"), 25000);
+    }
+    barStatus.addEventListener("click", () => {
+      barStatus.classList.remove("show");
+      if (barStatusTimer) clearTimeout(barStatusTimer);
+    });
+    window.electronAPI?.onCabinSecured?.(() => showBarStatus("Cabin Secured"));
 
     function setExpanded(expanded) {
       isExpanded = expanded;

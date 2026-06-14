@@ -10,6 +10,7 @@ try {
     restoreFlightEyeWindows: ()    => ipcRenderer.send('restore-flighteye-windows'),
     toggleIpad:           ()       => ipcRenderer.send('toggle-ipad'),
     sendDispatchData:     (data)   => ipcRenderer.send('dispatch-data', data),
+    onCabinSecured:       (cb)     => ipcRenderer.on('cabin-secured', () => cb()),
   });
 } catch (e) {
   console.error('Failed to expose electronAPI:', e);
