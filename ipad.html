@@ -1364,7 +1364,59 @@
 
     let bdState = null;
     let bdTimer = null;
+    let bdFinalizeEnd = 0;     // timestamp when the completion chime fires (0 = inactive)
+    let bdFinalizeTO  = null;  // setTimeout handle for the chime
+    let bdCountdownIV = null;  // setInterval handle for the doors-closing countdown
+    let bdAudioCtx    = null;
     try { bdState = JSON.parse(localStorage.getItem('bd-state') || 'null'); } catch {}
+
+    function bdEnsureAudio() {
+      try {
+        if (!bdAudioCtx) bdAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (bdAudioCtx.state === 'suspended') bdAudioCtx.resume();
+      } catch (e) {}
+    }
+
+    // Two-tone cabin "bing-bong" chime, synthesized — no audio file needed
+    function bdPlayChime() {
+      try {
+        bdEnsureAudio();
+        const ctx = bdAudioCtx;
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        [523.25, 415.30].forEach((f, i) => {       // C5 then G#4
+          const osc  = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = f;
+          osc.connect(gain); gain.connect(ctx.destination);
+          const t = now + i * 0.45;
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.exponentialRampToValueAtTime(0.4, t + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0006, t + 1.6);
+          osc.start(t);
+          osc.stop(t + 1.7);
+        });
+      } catch (e) {}
+    }
+
+    function bdClearFinalize() {
+      if (bdFinalizeTO)  { clearTimeout(bdFinalizeTO);   bdFinalizeTO  = null; }
+      if (bdCountdownIV) { clearInterval(bdCountdownIV);  bdCountdownIV = null; }
+      bdFinalizeEnd = 0;
+    }
+
+    function bdBeginFinalize() {
+      bdClearFinalize();
+      bdFinalizeEnd = Date.now() + 30000;           // ~30s doors-closing delay
+      bdCountdownIV = setInterval(bdRender, 1000);   // tick the countdown text
+      bdFinalizeTO  = setTimeout(() => {
+        bdClearFinalize();
+        bdPlayChime();                               // ding — boarding complete
+        bdRender();
+      }, 30000);
+      bdRender();
+    }
 
     function bdSave() {
       if (bdState) localStorage.setItem('bd-state', JSON.stringify(bdState));
@@ -1388,19 +1440,22 @@
       const ac = (name || '').toUpperCase();
       if (!ac || !ACFT[ac]) {
         if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
+        bdClearFinalize();
         bdState = null; bdSave(); bdRender(); return;
       }
       if (bdState && bdState.aircraft === ac) { bdRender(); return; }  // unchanged → keep progress
       if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
+      bdClearFinalize();
       bdState = bdCompute(ac);
       bdSave(); bdRender();
     }
 
     function bdStart() {
       if (!bdState || bdState.freight || bdState.boarded >= bdState.target || bdTimer) return;
+      bdEnsureAudio();
       bdTimer = setInterval(() => {
         if (bdState.boarded >= bdState.target) {
-          clearInterval(bdTimer); bdTimer = null; bdSave(); bdRender(); return;
+          clearInterval(bdTimer); bdTimer = null; bdSave(); bdBeginFinalize(); return;
         }
         const burst = Math.max(1, Math.round(bdState.target / 150));
         bdState.boarded = Math.min(bdState.target, bdState.boarded + burst);
@@ -1409,15 +1464,17 @@
     }
 
     function bdBoardAll() {
-      if (!bdState) return;
+      if (!bdState || bdState.freight) return;
+      bdEnsureAudio();
       if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
       bdState.boarded = bdState.target;
-      bdSave(); bdRender();
+      bdSave(); bdBeginFinalize();
     }
 
     function bdReset() {
       if (!bdState) return;
       if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
+      bdClearFinalize();
       bdState.boarded = 0;
       bdSave(); bdRender();
     }
@@ -1429,7 +1486,8 @@
       ph.style.display = 'none'; body.style.display = 'block';
 
       const s = bdState;
-      const complete = s.freight || s.boarded >= s.target;
+      const allAboard  = s.freight || s.boarded >= s.target;
+      const finalizing = !s.freight && s.boarded >= s.target && bdFinalizeEnd > Date.now();
       const pct = s.target ? (s.boarded / s.target) * 100 : 100;
 
       document.getElementById('bd-acft-name').textContent = s.aircraft;
@@ -1440,17 +1498,20 @@
       // status pill
       const statusEl = document.getElementById('bd-status');
       statusEl.classList.remove('boarding', 'done');
-      if (s.freight)            { statusEl.textContent = 'Cargo';    statusEl.classList.add('done'); }
-      else if (complete)        { statusEl.textContent = 'Complete'; statusEl.classList.add('done'); }
-      else if (bdTimer)         { statusEl.textContent = 'Boarding'; statusEl.classList.add('boarding'); }
-      else if (s.boarded > 0)   { statusEl.textContent = 'Paused';   statusEl.classList.add('boarding'); }
+      if (s.freight)            { statusEl.textContent = 'Cargo';         statusEl.classList.add('done'); }
+      else if (finalizing)      { statusEl.textContent = 'Doors Closing'; statusEl.classList.add('boarding'); }
+      else if (allAboard)       { statusEl.textContent = 'Complete';      statusEl.classList.add('done'); }
+      else if (bdTimer)         { statusEl.textContent = 'Boarding';      statusEl.classList.add('boarding'); }
+      else if (s.boarded > 0)   { statusEl.textContent = 'Paused';        statusEl.classList.add('boarding'); }
       else                      { statusEl.textContent = 'Ready'; }
 
       // counter
       document.getElementById('bd-boarded').textContent = s.freight ? '0' : s.boarded;
       document.getElementById('bd-target').textContent  = s.freight ? '0' : s.target;
       document.getElementById('bd-count-label').textContent =
-        s.freight ? 'Cargo flight — no passengers' : 'Passengers boarded';
+        s.freight    ? 'Cargo flight — no passengers'
+        : finalizing ? `Doors closing — ${Math.ceil((bdFinalizeEnd - Date.now()) / 1000)}s`
+        : 'Passengers boarded';
 
       document.getElementById('bd-bar-fill').style.width = `${pct}%`;
       document.getElementById('bd-pct').textContent = `${Math.round(pct)}%`;
@@ -1461,17 +1522,17 @@
         z.classList.remove('active', 'done');
         const st = z.querySelector('.bd-zone-state');
         if (i < zonesDone)        { z.classList.add('done');   st.textContent = 'Boarded'; }
-        else if (i === zonesDone && !complete && (bdTimer || s.boarded > 0)) {
+        else if (i === zonesDone && !allAboard && (bdTimer || s.boarded > 0)) {
                                     z.classList.add('active'); st.textContent = 'Boarding'; }
         else                      {                            st.textContent = 'Waiting'; }
       });
 
       // controls
-      document.getElementById('bd-start').disabled = s.freight || complete;
-      document.getElementById('bd-all').disabled   = s.freight || complete;
+      document.getElementById('bd-start').disabled = s.freight || allAboard;
+      document.getElementById('bd-all').disabled   = s.freight || allAboard;
       document.getElementById('bd-reset').disabled = s.freight || s.boarded === 0;
       document.getElementById('bd-start').textContent =
-        (!bdTimer && s.boarded > 0 && !complete) ? '▶ Resume Boarding' : '▶ Start Boarding';
+        (!bdTimer && s.boarded > 0 && !allAboard) ? '▶ Resume Boarding' : '▶ Start Boarding';
 
       // load sheet
       const pax     = s.freight ? 0 : s.boarded;
