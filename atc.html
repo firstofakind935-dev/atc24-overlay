@@ -230,6 +230,10 @@
       padding: 4px 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }
     .wx-use:hover { border-color: #3fb950; color: #3fb950; }
+
+    /* Scope (embedded 24Scope) */
+    #view-scope { background: #0d1117; }
+    #view-scope webview { flex: 1; width: 100%; min-height: 0; border: none; }
   </style>
 </head>
 <body>
@@ -245,6 +249,7 @@
   <div id="rail">
     <button class="rail-btn active" data-view="station">🎙<span>Station</span></button>
     <button class="rail-btn" data-view="weather">🌦<span>Weather</span></button>
+    <button class="rail-btn" data-view="scope">🛰<span>Scope</span></button>
   </div>
   <div id="main">
 
@@ -313,6 +318,10 @@
       <span id="wx-updated"></span>
     </div>
     <div id="wx-list"><div class="wx-empty">Open to load live ATIS…</div></div>
+  </div>
+
+  <div class="view" id="view-scope">
+    <webview id="scope-webview" allowpopups></webview>
   </div>
 
   </div><!-- /main -->
@@ -493,8 +502,17 @@
         document.querySelectorAll('.view').forEach(p => p.classList.remove('active'));
         document.getElementById('view-' + v).classList.add('active');
         if (v === 'weather' && !wxLoaded) loadWx();
+        if (v === 'scope') initScope();
       });
     });
+
+    // ── Scope (lazy-loaded so the window opens fast) ─────────────────────────
+    let scopeLoaded = false;
+    function initScope() {
+      if (scopeLoaded) return;
+      scopeLoaded = true;
+      document.getElementById('scope-webview').src = 'https://zedruc.net/24scope/';
+    }
 
     // ── Live ATIS / weather (from ATC24 data service) ────────────────────────
     const wxList = document.getElementById('wx-list');

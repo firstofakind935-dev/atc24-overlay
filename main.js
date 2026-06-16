@@ -162,7 +162,7 @@ function createAtcWindow() {
     skipTaskbar: true, hasShadow: true,
     webPreferences: {
       preload: path.join(__dirname, 'atc-preload.js'),
-      contextIsolation: true, nodeIntegration: false,
+      contextIsolation: true, nodeIntegration: false, webviewTag: true,
     },
   });
 
