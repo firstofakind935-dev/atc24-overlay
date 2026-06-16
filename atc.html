@@ -143,6 +143,7 @@
       padding: 4px 6px; font-size: 0.74rem; outline: none;
     }
     .strip-actions select:focus { border-color: #d2a8ff; }
+    .strip-actions .strip-rwy { flex: 0 0 96px; }
     .strip-tx {
       background: #1f6feb; border: none; border-radius: 5px; color: #fff;
       padding: 4px 12px; font-size: 0.74rem; font-weight: 700; cursor: pointer; transition: background 0.15s; white-space: nowrap;
@@ -322,23 +323,30 @@
 
   <script>
     // ── Instruction templates (controller → pilot) ──────────────────────────
-    // pos = which controller positions may issue this instruction
+    // pos = positions that may issue this · rwy = which active runway it uses ('dep'/'arr')
     const INSTRUCTIONS = [
-      { id: 'clearance', label: 'IFR Clearance',   status: 'Cleared',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, cleared to ${s.arr || 'destination'} as filed, squawk ${s.squawk}.` },
-      { id: 'startup',   label: 'Startup',         status: 'Startup',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, startup approved, information ${c.atis || 'current'}, QNH ${c.qnh || 'standard'}.` },
-      { id: 'pushback',  label: 'Pushback',        status: 'Pushback',  pos: ['Ground'],           build: (cs, s, c) => `${cs}, pushback approved.` },
-      { id: 'taxi',      label: 'Taxi to RWY',     status: 'Taxiing',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, taxi to holding point runway ${c.depRwy || 'in use'}, QNH ${c.qnh || 'standard'}.` },
-      { id: 'taxiGate',  label: 'Taxi to Stand',   status: 'Arrived',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, taxi to stand, welcome to ${c.apt || 'the field'}.` },
-      { id: 'lineup',    label: 'Line Up & Wait',  status: 'Lining Up', pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.depRwy || 'in use'}, line up and wait.` },
-      { id: 'takeoff',   label: 'Cleared Takeoff', status: 'Departing', pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.depRwy || 'in use'}, wind ${c.wind || 'calm'}, cleared for takeoff.` },
-      { id: 'land',      label: 'Cleared to Land', status: 'Landing',   pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.arrRwy || 'in use'}, wind ${c.wind || 'calm'}, cleared to land.` },
-      { id: 'twrHand',   label: 'Handoff → TWR',   status: 'Inbound',   pos: ['Center'],           build: (cs, s, c) => `${cs}, contact Tower.` },
-      { id: 'ctrHand',   label: 'Handoff → CTR',   status: 'Departed',  pos: ['Tower'],            build: (cs, s, c) => `${cs}, contact Center, good day.` },
-      { id: 'climb',     label: 'Climb / On Course', status: 'Climbing', pos: ['Center'],          build: (cs, s, c) => `${cs}, radar contact, climb flight level as filed, proceed on course.` },
-      { id: 'descend',   label: 'Descend / Arrival', status: 'Inbound', pos: ['Center'],           build: (cs, s, c) => `${cs}, descend via the arrival, expect runway ${c.arrRwy || 'in use'}.` },
-      { id: 'approach',  label: 'Cleared Approach', status: 'Approach', pos: ['Center'],           build: (cs, s, c) => `${cs}, cleared ILS approach runway ${c.arrRwy || 'in use'}.` },
-      { id: 'goaround',  label: 'Go Around',       status: 'Go Around', pos: ['Tower', 'Center'],  build: (cs, s, c) => `${cs}, go around, fly runway heading, climb 3000 feet.` },
+      { id: 'clearance', label: 'IFR Clearance',   status: 'Cleared',   pos: ['Ground'],           rwy: null,  build: (cs, s, c) => `${cs}, cleared to ${s.arr || 'destination'} as filed, squawk ${s.squawk}.` },
+      { id: 'startup',   label: 'Startup',         status: 'Startup',   pos: ['Ground'],           rwy: null,  build: (cs, s, c) => `${cs}, startup approved, information ${c.atis || 'current'}, QNH ${c.qnh || 'standard'}.` },
+      { id: 'pushback',  label: 'Pushback',        status: 'Pushback',  pos: ['Ground'],           rwy: null,  build: (cs, s, c) => `${cs}, pushback approved.` },
+      { id: 'taxi',      label: 'Taxi to RWY',     status: 'Taxiing',   pos: ['Ground'],           rwy: 'dep', build: (cs, s, c) => `${cs}, taxi to holding point runway ${c.depRwy || 'in use'}, QNH ${c.qnh || 'standard'}.` },
+      { id: 'taxiGate',  label: 'Taxi to Stand',   status: 'Arrived',   pos: ['Ground'],           rwy: null,  build: (cs, s, c) => `${cs}, taxi to stand, welcome to ${c.apt || 'the field'}.` },
+      { id: 'lineup',    label: 'Line Up & Wait',  status: 'Lining Up', pos: ['Tower'],            rwy: 'dep', build: (cs, s, c) => `${cs}, runway ${c.depRwy || 'in use'}, line up and wait.` },
+      { id: 'takeoff',   label: 'Cleared Takeoff', status: 'Departing', pos: ['Tower'],            rwy: 'dep', build: (cs, s, c) => `${cs}, runway ${c.depRwy || 'in use'}, wind ${c.wind || 'calm'}, cleared for takeoff.` },
+      { id: 'land',      label: 'Cleared to Land', status: 'Landing',   pos: ['Tower'],            rwy: 'arr', build: (cs, s, c) => `${cs}, runway ${c.arrRwy || 'in use'}, wind ${c.wind || 'calm'}, cleared to land.` },
+      { id: 'twrHand',   label: 'Handoff → TWR',   status: 'Inbound',   pos: ['Center'],           rwy: null,  build: (cs, s, c) => `${cs}, contact Tower.` },
+      { id: 'ctrHand',   label: 'Handoff → CTR',   status: 'Departed',  pos: ['Tower'],            rwy: null,  build: (cs, s, c) => `${cs}, contact Center, good day.` },
+      { id: 'climb',     label: 'Climb / On Course', status: 'Climbing', pos: ['Center'],          rwy: null,  build: (cs, s, c) => `${cs}, radar contact, climb flight level as filed, proceed on course.` },
+      { id: 'descend',   label: 'Descend / Arrival', status: 'Inbound', pos: ['Center'],           rwy: 'arr', build: (cs, s, c) => `${cs}, descend via the arrival, expect runway ${c.arrRwy || 'in use'}.` },
+      { id: 'approach',  label: 'Cleared Approach', status: 'Approach', pos: ['Center'],           rwy: 'arr', build: (cs, s, c) => `${cs}, cleared ILS approach runway ${c.arrRwy || 'in use'}.` },
+      { id: 'goaround',  label: 'Go Around',       status: 'Go Around', pos: ['Tower', 'Center'],  rwy: null,  build: (cs, s, c) => `${cs}, go around, fly runway heading, climb 3000 feet.` },
     ];
+
+    function rwysFor(instrId) {
+      const instr = INSTRUCTIONS.find(i => i.id === instrId);
+      if (!instr || !instr.rwy) return [];
+      const c = getCfg();
+      return (instr.rwy === 'dep' ? c.depRwy : c.arrRwy).split(/\s+/).filter(Boolean);
+    }
 
     const DONE_STATUSES = new Set(['Departed', 'Arrived', 'Handed Off']);
 
@@ -437,21 +445,38 @@
           </div>
           <div class="strip-meta">${escapeHtml(s.dep || '???')} → ${escapeHtml(s.arr || '???')} · <span class="strip-sq">SQ ${s.squawk}</span></div>
           <div class="strip-actions">
-            <select>${opts}</select>
+            <select class="strip-instr">${opts}</select>
+            <select class="strip-rwy" style="display:none"></select>
             <button class="strip-tx">▶ Transmit</button>
           </div>`;
-        const select = div.querySelector('select');
-        div.querySelector('.strip-tx').addEventListener('click', () => transmit(idx, select.value));
+        const instrSel = div.querySelector('.strip-instr');
+        const rwySel   = div.querySelector('.strip-rwy');
+        function refreshRwy() {
+          const rwys = rwysFor(instrSel.value);
+          if (rwys.length >= 2) {           // only ask which runway when there's a choice
+            rwySel.innerHTML = rwys.map(r => `<option value="${r}">RWY ${r}</option>`).join('');
+            rwySel.style.display = '';
+          } else {
+            rwySel.innerHTML = '';
+            rwySel.style.display = 'none';
+          }
+        }
+        instrSel.addEventListener('change', refreshRwy);
+        refreshRwy();
+        div.querySelector('.strip-tx').addEventListener('click', () => transmit(idx, instrSel.value, rwySel.value));
         div.querySelector('.strip-rm').addEventListener('click', () => { strips.splice(idx, 1); saveStrips(); renderStrips(); });
         wrap.appendChild(div);
       });
     }
 
-    function transmit(idx, instrId) {
+    function transmit(idx, instrId, chosenRwy) {
       const s = strips[idx];
       const instr = INSTRUCTIONS.find(i => i.id === instrId);
       if (!s || !instr) return;
-      const text = instr.build(s.cs, s, getCfg());
+      const cfg = getCfg();
+      if (chosenRwy && instr.rwy === 'dep') cfg.depRwy = chosenRwy;
+      if (chosenRwy && instr.rwy === 'arr') cfg.arrRwy = chosenRwy;
+      const text = instr.build(s.cs, s, cfg);
       s.status = instr.status;
       saveStrips();
       renderStrips();
