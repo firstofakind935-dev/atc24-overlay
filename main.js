@@ -284,6 +284,17 @@ ipcMain.on('minimize-atc', () => {
   if (atcWin) { saveBoundsOf('atc', atcWin); atcWin.hide(); }
 });
 
+// Live ATIS/weather from the public ATC24 data service (fetched here to avoid CORS)
+ipcMain.handle('fetch-atis', async () => {
+  try {
+    const res = await fetch('https://24data.ptfs.app/atis', { headers: { accept: 'application/json' } });
+    if (!res.ok) return { error: 'HTTP ' + res.status };
+    return await res.json();
+  } catch (e) {
+    return { error: String(e) };
+  }
+});
+
 ipcMain.on('show-ipad', () => {
   if (ipadWin && !ipadWin.isVisible()) ipadWin.show();
 });

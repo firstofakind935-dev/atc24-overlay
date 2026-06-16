@@ -173,6 +173,63 @@
     .log-line .lt { color: #6e7681; margin-right: 6px; }
     .log-line.atis { color: #d2a8ff; }
     .log-empty { color: #6e7681; font-size: 0.72rem; font-style: italic; }
+
+    /* Shell: side launcher rail + main area */
+    #shell { flex: 1; display: flex; min-height: 0; }
+    #rail {
+      width: 62px; flex-shrink: 0;
+      background: #0b0e13; border-right: 1px solid #30363d;
+      display: flex; flex-direction: column; padding: 8px 0; gap: 2px;
+    }
+    .rail-btn {
+      background: none; border: none; color: #8b949e; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 9px 0; font-size: 17px; border-left: 2px solid transparent; transition: all 0.15s;
+    }
+    .rail-btn span { font-size: 0.52rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    .rail-btn:hover { color: #e6edf3; }
+    .rail-btn.active { color: #d2a8ff; border-left-color: #d2a8ff; background: #161b22; }
+
+    #main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .view { display: none; flex: 1; min-height: 0; }
+    .view.active { display: flex; flex-direction: column; }
+
+    /* Weather view */
+    #wx-head {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      border-bottom: 1px solid #30363d; flex-shrink: 0;
+    }
+    #wx-head h2 { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #d2a8ff; }
+    #wx-filter {
+      background: #0d1117; border: 1px solid #30363d; border-radius: 5px; color: #e6edf3;
+      padding: 4px 8px; font-size: 0.74rem; outline: none; width: 96px;
+    }
+    #wx-filter:focus { border-color: #d2a8ff; }
+    #wx-refresh {
+      background: #6e40c9; border: none; border-radius: 5px; color: #fff;
+      padding: 4px 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: background 0.15s;
+    }
+    #wx-refresh:hover { background: #8957e5; }
+    #wx-updated { font-size: 0.64rem; color: #8b949e; margin-left: auto; white-space: nowrap; }
+
+    #wx-list {
+      flex: 1; overflow-y: auto; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 7px;
+      scrollbar-width: thin; scrollbar-color: #30363d transparent;
+    }
+    #wx-list::-webkit-scrollbar { width: 5px; }
+    #wx-list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+    .wx-empty { color: #8b949e; font-size: 0.8rem; text-align: center; margin-top: 24px; line-height: 1.6; }
+    .wx-card { background: #161b22; border: 1px solid #30363d; border-radius: 7px; padding: 8px 10px; }
+    .wx-top { display: flex; align-items: center; justify-content: space-between; }
+    .wx-icao { font-size: 0.95rem; font-weight: 800; color: #e6edf3; letter-spacing: 0.05em; }
+    .wx-info { font-size: 0.6rem; font-weight: 700; color: #d2a8ff; border: 1px solid #d2a8ff; border-radius: 12px; padding: 1px 8px; }
+    .wx-meta { font-size: 0.72rem; color: #c9d1d9; font-family: 'Consolas', monospace; margin: 5px 0 7px; }
+    .wx-use {
+      background: none; border: 1px solid #30363d; border-radius: 5px; color: #8b949e;
+      padding: 4px 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .wx-use:hover { border-color: #3fb950; color: #3fb950; }
   </style>
 </head>
 <body>
@@ -184,6 +241,14 @@
     </div>
   </div>
 
+  <div id="shell">
+  <div id="rail">
+    <button class="rail-btn active" data-view="station">🎙<span>Station</span></button>
+    <button class="rail-btn" data-view="weather">🌦<span>Weather</span></button>
+  </div>
+  <div id="main">
+
+  <div class="view active" id="view-station">
   <div id="config">
     <div class="cfg-field">
       <label for="cfg-pos">Position</label>
@@ -238,6 +303,20 @@
     <div id="log-title"><span>Transmission Log</span><button id="log-clear">Clear</button></div>
     <div id="log-body"><div class="log-empty">Instructions you issue will appear here.</div></div>
   </div>
+  </div><!-- /view-station -->
+
+  <div class="view" id="view-weather">
+    <div id="wx-head">
+      <h2>Live ATIS</h2>
+      <input type="text" id="wx-filter" placeholder="Filter ICAO" />
+      <button id="wx-refresh">↻ Refresh</button>
+      <span id="wx-updated"></span>
+    </div>
+    <div id="wx-list"><div class="wx-empty">Open to load live ATIS…</div></div>
+  </div>
+
+  </div><!-- /main -->
+  </div><!-- /shell -->
 
   <script>
     // ── Instruction templates (controller → pilot) ──────────────────────────
@@ -403,6 +482,74 @@
 
     document.getElementById('min-btn').addEventListener('click', () => window.atcAPI?.minimizeAtc());
     document.getElementById('close-btn').addEventListener('click', () => window.close());
+
+    // ── Rail / view switching ────────────────────────────────────────────────
+    let wxLoaded = false;
+    document.querySelectorAll('.rail-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = btn.dataset.view;
+        document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.view').forEach(p => p.classList.remove('active'));
+        document.getElementById('view-' + v).classList.add('active');
+        if (v === 'weather' && !wxLoaded) loadWx();
+      });
+    });
+
+    // ── Live ATIS / weather (from ATC24 data service) ────────────────────────
+    const wxList = document.getElementById('wx-list');
+
+    function parseAtis(content) {
+      const wind = (content.match(/(\d{3}\/\d{1,2})/) || [])[1] || '';
+      const qnh  = (content.match(/Q(\d{3,4})/) || [])[1] || '';
+      const dep  = ((content.match(/DEP RWY ([0-9LRC ]+?)\s+ARR/) || [])[1] || '').trim();
+      const arr  = ((content.match(/ARR RWY ([0-9LRC ]+)/) || [])[1] || '').trim();
+      return { wind, qnh, dep, arr };
+    }
+
+    function wxFilterApply() {
+      const q = document.getElementById('wx-filter').value.trim().toUpperCase();
+      wxList.querySelectorAll('.wx-card').forEach(c => {
+        c.style.display = (!q || c.dataset.apt.includes(q)) ? '' : 'none';
+      });
+    }
+
+    async function loadWx() {
+      wxList.innerHTML = '<div class="wx-empty">Loading live ATIS…</div>';
+      let data;
+      try { data = await window.atcAPI?.fetchAtis(); } catch { data = null; }
+      if (!Array.isArray(data)) {
+        wxList.innerHTML = '<div class="wx-empty">Couldn\'t reach the ATC24 data service.<br>Check your connection and refresh.</div>';
+        return;
+      }
+      wxLoaded = true;
+      data.sort((a, b) => a.airport.localeCompare(b.airport));
+      wxList.innerHTML = data.map(a => {
+        const p = parseAtis(a.content || '');
+        const firstRwy = (p.dep.split(/\s+/)[0] || '');
+        return `<div class="wx-card" data-apt="${a.airport}" data-rwy="${firstRwy}" data-wind="${p.wind}" data-qnh="${p.qnh}" data-atis="${a.letter}">
+          <div class="wx-top"><span class="wx-icao">${escapeHtml(a.airport)}</span><span class="wx-info">INFO ${escapeHtml(a.letter || '?')}</span></div>
+          <div class="wx-meta">🌬 ${p.wind || '—'} · QNH ${p.qnh || '—'} · DEP ${p.dep || '—'} · ARR ${p.arr || '—'}</div>
+          <button class="wx-use">→ Load into Station</button>
+        </div>`;
+      }).join('');
+      wxList.querySelectorAll('.wx-card').forEach(card => {
+        card.querySelector('.wx-use').addEventListener('click', () => {
+          cfgEls.apt.value  = card.dataset.apt;
+          cfgEls.rwy.value  = card.dataset.rwy;
+          cfgEls.wind.value = card.dataset.wind;
+          cfgEls.qnh.value  = card.dataset.qnh;
+          cfgEls.atis.value = card.dataset.atis;
+          saveCfg();
+          document.querySelector('.rail-btn[data-view="station"]').click();
+        });
+      });
+      document.getElementById('wx-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      wxFilterApply();
+    }
+
+    document.getElementById('wx-refresh').addEventListener('click', loadWx);
+    document.getElementById('wx-filter').addEventListener('input', wxFilterApply);
 
     loadCfg();
     renderStrips();
