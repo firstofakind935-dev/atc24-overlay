@@ -254,11 +254,8 @@
     <div class="cfg-field">
       <label for="cfg-pos">Position</label>
       <select id="cfg-pos">
-        <option value="Delivery">Delivery</option>
         <option value="Ground">Ground</option>
         <option value="Tower" selected>Tower</option>
-        <option value="Approach">Approach</option>
-        <option value="Departure">Departure</option>
         <option value="Center">Center</option>
       </select>
     </div>
@@ -323,22 +320,20 @@
     // ── Instruction templates (controller → pilot) ──────────────────────────
     // pos = which controller positions may issue this instruction
     const INSTRUCTIONS = [
-      { id: 'clearance', label: 'IFR Clearance',   status: 'Cleared',   pos: ['Delivery'],            build: (cs, s, c) => `${cs}, cleared to ${s.arr || 'destination'} as filed, squawk ${s.squawk}.` },
-      { id: 'startup',   label: 'Startup',         status: 'Startup',   pos: ['Delivery', 'Ground'],  build: (cs, s, c) => `${cs}, startup approved, information ${c.atis || 'current'}, QNH ${c.qnh || 'standard'}.` },
-      { id: 'pushback',  label: 'Pushback',        status: 'Pushback',  pos: ['Ground'],              build: (cs, s, c) => `${cs}, pushback approved.` },
-      { id: 'taxi',      label: 'Taxi to RWY',     status: 'Taxiing',   pos: ['Ground'],              build: (cs, s, c) => `${cs}, taxi to holding point runway ${c.rwy || 'in use'}, QNH ${c.qnh || 'standard'}.` },
-      { id: 'lineup',    label: 'Line Up & Wait',  status: 'Lining Up', pos: ['Tower'],               build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, line up and wait.` },
-      { id: 'takeoff',   label: 'Cleared Takeoff', status: 'Departing', pos: ['Tower'],               build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, wind ${c.wind || 'calm'}, cleared for takeoff.` },
-      { id: 'depHand',   label: 'Handoff → DEP',   status: 'Departed',  pos: ['Tower'],               build: (cs, s, c) => `${cs}, contact Departure, good day.` },
-      { id: 'climb',     label: 'Climb / On Course', status: 'Climbing', pos: ['Departure', 'Center'], build: (cs, s, c) => `${cs}, radar contact, climb flight level as filed, proceed on course.` },
-      { id: 'descend',   label: 'Descend / Arrival', status: 'Inbound', pos: ['Approach', 'Center'],  build: (cs, s, c) => `${cs}, descend via the arrival, expect runway ${c.rwy || 'in use'}.` },
-      { id: 'appHand',   label: 'Handoff → APP',   status: 'Inbound',   pos: ['Center'],              build: (cs, s, c) => `${cs}, contact Approach, good day.` },
-      { id: 'approach',  label: 'Cleared Approach', status: 'Approach', pos: ['Approach'],            build: (cs, s, c) => `${cs}, cleared ILS approach runway ${c.rwy || 'in use'}.` },
-      { id: 'twrHand',   label: 'Handoff → TWR',   status: 'Approach',  pos: ['Approach'],            build: (cs, s, c) => `${cs}, contact Tower.` },
-      { id: 'land',      label: 'Cleared to Land', status: 'Landing',   pos: ['Tower'],               build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, wind ${c.wind || 'calm'}, cleared to land.` },
-      { id: 'goaround',  label: 'Go Around',       status: 'Go Around', pos: ['Tower', 'Approach'],   build: (cs, s, c) => `${cs}, go around, fly runway heading, climb 3000 feet.` },
-      { id: 'taxiGate',  label: 'Taxi to Stand',   status: 'Arrived',   pos: ['Ground'],              build: (cs, s, c) => `${cs}, taxi to stand, welcome to ${c.apt || 'the field'}.` },
-      { id: 'handoffCtr',label: 'Handoff → CTR',   status: 'Handed Off',pos: ['Departure', 'Center'], build: (cs, s, c) => `${cs}, contact Center, good day.` },
+      { id: 'clearance', label: 'IFR Clearance',   status: 'Cleared',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, cleared to ${s.arr || 'destination'} as filed, squawk ${s.squawk}.` },
+      { id: 'startup',   label: 'Startup',         status: 'Startup',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, startup approved, information ${c.atis || 'current'}, QNH ${c.qnh || 'standard'}.` },
+      { id: 'pushback',  label: 'Pushback',        status: 'Pushback',  pos: ['Ground'],           build: (cs, s, c) => `${cs}, pushback approved.` },
+      { id: 'taxi',      label: 'Taxi to RWY',     status: 'Taxiing',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, taxi to holding point runway ${c.rwy || 'in use'}, QNH ${c.qnh || 'standard'}.` },
+      { id: 'taxiGate',  label: 'Taxi to Stand',   status: 'Arrived',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, taxi to stand, welcome to ${c.apt || 'the field'}.` },
+      { id: 'lineup',    label: 'Line Up & Wait',  status: 'Lining Up', pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, line up and wait.` },
+      { id: 'takeoff',   label: 'Cleared Takeoff', status: 'Departing', pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, wind ${c.wind || 'calm'}, cleared for takeoff.` },
+      { id: 'land',      label: 'Cleared to Land', status: 'Landing',   pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, wind ${c.wind || 'calm'}, cleared to land.` },
+      { id: 'twrHand',   label: 'Handoff → TWR',   status: 'Inbound',   pos: ['Center'],           build: (cs, s, c) => `${cs}, contact Tower.` },
+      { id: 'ctrHand',   label: 'Handoff → CTR',   status: 'Departed',  pos: ['Tower'],            build: (cs, s, c) => `${cs}, contact Center, good day.` },
+      { id: 'climb',     label: 'Climb / On Course', status: 'Climbing', pos: ['Center'],          build: (cs, s, c) => `${cs}, radar contact, climb flight level as filed, proceed on course.` },
+      { id: 'descend',   label: 'Descend / Arrival', status: 'Inbound', pos: ['Center'],           build: (cs, s, c) => `${cs}, descend via the arrival, expect runway ${c.rwy || 'in use'}.` },
+      { id: 'approach',  label: 'Cleared Approach', status: 'Approach', pos: ['Center'],           build: (cs, s, c) => `${cs}, cleared ILS approach runway ${c.rwy || 'in use'}.` },
+      { id: 'goaround',  label: 'Go Around',       status: 'Go Around', pos: ['Tower', 'Center'],  build: (cs, s, c) => `${cs}, go around, fly runway heading, climb 3000 feet.` },
     ];
 
     const DONE_STATUSES = new Set(['Departed', 'Arrived', 'Handed Off']);
@@ -360,7 +355,7 @@
     function loadCfg() {
       let c = {};
       try { c = JSON.parse(localStorage.getItem('atc-cfg') || '{}'); } catch {}
-      cfgEls.pos.value  = c.pos  || 'Tower';
+      cfgEls.pos.value  = ['Ground', 'Tower', 'Center'].includes(c.pos) ? c.pos : 'Tower';
       cfgEls.apt.value  = c.apt  || '';
       cfgEls.rwy.value  = c.rwy  || '';
       cfgEls.wind.value = c.wind || '';
