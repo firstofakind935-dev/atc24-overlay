@@ -230,10 +230,6 @@
       padding: 4px 10px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }
     .wx-use:hover { border-color: #3fb950; color: #3fb950; }
-
-    /* Scope (embedded 24Scope) */
-    #view-scope { background: #0d1117; }
-    #view-scope webview { flex: 1; width: 100%; min-height: 0; border: none; }
   </style>
 </head>
 <body>
@@ -249,7 +245,7 @@
   <div id="rail">
     <button class="rail-btn active" data-view="station">🎙<span>Station</span></button>
     <button class="rail-btn" data-view="weather">🌦<span>Weather</span></button>
-    <button class="rail-btn" data-view="scope">🛰<span>Scope</span></button>
+    <button class="rail-btn" id="rail-scope" title="Open Scope in a separate window">🛰<span>Scope</span></button>
   </div>
   <div id="main">
 
@@ -318,10 +314,6 @@
       <span id="wx-updated"></span>
     </div>
     <div id="wx-list"><div class="wx-empty">Open to load live ATIS…</div></div>
-  </div>
-
-  <div class="view" id="view-scope">
-    <webview id="scope-webview" allowpopups></webview>
   </div>
 
   </div><!-- /main -->
@@ -492,27 +484,21 @@
     document.getElementById('min-btn').addEventListener('click', () => window.atcAPI?.minimizeAtc());
     document.getElementById('close-btn').addEventListener('click', () => window.close());
 
-    // ── Rail / view switching ────────────────────────────────────────────────
+    // ── Rail / view switching (Station + Weather are in-window views) ─────────
     let wxLoaded = false;
-    document.querySelectorAll('.rail-btn').forEach(btn => {
+    document.querySelectorAll('.rail-btn[data-view]').forEach(btn => {
       btn.addEventListener('click', () => {
         const v = btn.dataset.view;
-        document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.rail-btn[data-view]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         document.querySelectorAll('.view').forEach(p => p.classList.remove('active'));
         document.getElementById('view-' + v).classList.add('active');
         if (v === 'weather' && !wxLoaded) loadWx();
-        if (v === 'scope') initScope();
       });
     });
 
-    // ── Scope (lazy-loaded so the window opens fast) ─────────────────────────
-    let scopeLoaded = false;
-    function initScope() {
-      if (scopeLoaded) return;
-      scopeLoaded = true;
-      document.getElementById('scope-webview').src = 'https://zedruc.net/24scope/';
-    }
+    // Scope opens as its own window so it stays active alongside the station
+    document.getElementById('rail-scope').addEventListener('click', () => window.atcAPI?.toggleScope());
 
     // ── Live ATIS / weather (from ATC24 data service) ────────────────────────
     const wxList = document.getElementById('wx-list');

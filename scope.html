@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #0d1117;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    #titlebar {
+      height: 32px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+    #titlebar-label { font-size: 0.76rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #d2a8ff; }
+    #titlebar-label span { color: #8b949e; font-weight: 400; margin-left: 6px; font-size: 0.68rem; text-transform: none; letter-spacing: 0.03em; }
+    #titlebar-right { display: flex; gap: 6px; -webkit-app-region: no-drag; }
+    .tb-btn {
+      background: none; border: 1px solid #30363d; border-radius: 4px; color: #8b949e;
+      cursor: pointer; font-size: 11px; padding: 2px 8px; height: 22px;
+      display: flex; align-items: center; transition: all 0.15s; white-space: nowrap;
+    }
+    .tb-btn:hover    { border-color: #d2a8ff; color: #d2a8ff; }
+    #close-btn:hover { background: #da3633; border-color: #da3633; color: #fff; }
+
+    webview { flex: 1; width: 100%; min-height: 0; border: none; display: flex; }
+  </style>
+</head>
+<body>
+  <div id="titlebar">
+    <span id="titlebar-label">🛰 Scope <span>— 24Scope · drag to move · resize from corner</span></span>
+    <div id="titlebar-right">
+      <button class="tb-btn" id="min-btn">—</button>
+      <button class="tb-btn" id="close-btn">✕ Close</button>
+    </div>
+  </div>
+
+  <webview src="https://zedruc.net/24scope/" allowpopups></webview>
+
+  <script>
+    document.getElementById('min-btn').addEventListener('click', () => window.scopeAPI?.minimizeScope());
+    document.getElementById('close-btn').addEventListener('click', () => window.close());
+  </script>
+</body>
+</html>

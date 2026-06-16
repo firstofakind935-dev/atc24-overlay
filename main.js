@@ -13,6 +13,7 @@ let feWin;
 let feLargeWin;
 let ipadWin;
 let atcWin;
+let scopeWin;
 
 // ─── Persistent bounds ────────────────────────────────────────────────────────
 let settingsPath;
@@ -180,6 +181,38 @@ function createAtcWindow() {
   atcWin.on('closed', () => { atcWin = null; });
 }
 
+// ─── Scope window (24Scope radar) ─────────────────────────────────────────────
+function createScopeWindow() {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const def = { width: Math.round(width * 0.6), height: Math.round(height * 0.75),
+                x: 40, y: 60 };
+  const b = getBounds('scope', def);
+
+  scopeWin = new BrowserWindow({
+    width: b.width, height: b.height, x: b.x, y: b.y,
+    frame: false, transparent: false,
+    resizable: true, movable: true,
+    skipTaskbar: true, hasShadow: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'scope-preload.js'),
+      contextIsolation: true, nodeIntegration: false, webviewTag: true,
+    },
+  });
+
+  scopeWin.loadFile('scope.html');
+  scopeWin.setAlwaysOnTop(true, 'pop-up-menu');
+
+  scopeWin.on('resize', () => saveBoundsOf('scope', scopeWin));
+  scopeWin.on('move',   () => saveBoundsOf('scope', scopeWin));
+  scopeWin.on('minimize', () => { saveBoundsOf('scope', scopeWin); scopeWin.hide(); });
+  scopeWin.on('close', (e) => {
+    e.preventDefault();
+    saveBoundsOf('scope', scopeWin);
+    scopeWin.hide();
+  });
+  scopeWin.on('closed', () => { scopeWin = null; });
+}
+
 // ─── Main overlay ─────────────────────────────────────────────────────────────
 function createWindow() {
   const { width } = screen.getPrimaryDisplay().workAreaSize;
@@ -211,6 +244,7 @@ app.on('window-all-closed', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
   if (ipadWin)    { ipadWin.removeAllListeners('close');    ipadWin.close(); }
   if (atcWin)     { atcWin.removeAllListeners('close');     atcWin.close(); }
+  if (scopeWin)   { scopeWin.removeAllListeners('close');   scopeWin.close(); }
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -238,6 +272,7 @@ ipcMain.on('close-window', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
   if (ipadWin)    { ipadWin.removeAllListeners('close');    ipadWin.close(); }
   if (atcWin)     { atcWin.removeAllListeners('close');     atcWin.close(); }
+  if (scopeWin)   { scopeWin.removeAllListeners('close');   scopeWin.close(); }
   if (feWin) feWin.close();
   if (win)   win.close();
 });
@@ -282,6 +317,16 @@ ipcMain.on('toggle-atc', () => {
 
 ipcMain.on('minimize-atc', () => {
   if (atcWin) { saveBoundsOf('atc', atcWin); atcWin.hide(); }
+});
+
+ipcMain.on('toggle-scope', () => {
+  if (!scopeWin) { createScopeWindow(); return; }
+  if (scopeWin.isVisible()) { saveBoundsOf('scope', scopeWin); scopeWin.hide(); }
+  else { scopeWin.show(); }
+});
+
+ipcMain.on('minimize-scope', () => {
+  if (scopeWin) { saveBoundsOf('scope', scopeWin); scopeWin.hide(); }
 });
 
 // Live ATIS/weather from the public ATC24 data service (fetched here to avoid CORS)
