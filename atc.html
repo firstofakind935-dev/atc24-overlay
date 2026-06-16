@@ -49,7 +49,7 @@
       border-bottom: 1px solid #30363d;
       padding: 8px 12px;
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
       gap: 8px;
       flex-shrink: 0;
     }
@@ -264,8 +264,12 @@
       <input type="text" id="cfg-apt" placeholder="IRFD" />
     </div>
     <div class="cfg-field">
-      <label for="cfg-rwy">Active RWY</label>
-      <input type="text" id="cfg-rwy" placeholder="27L" />
+      <label for="cfg-deprwy">DEP RWY</label>
+      <input type="text" id="cfg-deprwy" placeholder="27L 27R" />
+    </div>
+    <div class="cfg-field">
+      <label for="cfg-arrrwy">ARR RWY</label>
+      <input type="text" id="cfg-arrrwy" placeholder="27L 27R" />
     </div>
     <div class="cfg-field">
       <label for="cfg-wind">Wind</label>
@@ -323,16 +327,16 @@
       { id: 'clearance', label: 'IFR Clearance',   status: 'Cleared',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, cleared to ${s.arr || 'destination'} as filed, squawk ${s.squawk}.` },
       { id: 'startup',   label: 'Startup',         status: 'Startup',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, startup approved, information ${c.atis || 'current'}, QNH ${c.qnh || 'standard'}.` },
       { id: 'pushback',  label: 'Pushback',        status: 'Pushback',  pos: ['Ground'],           build: (cs, s, c) => `${cs}, pushback approved.` },
-      { id: 'taxi',      label: 'Taxi to RWY',     status: 'Taxiing',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, taxi to holding point runway ${c.rwy || 'in use'}, QNH ${c.qnh || 'standard'}.` },
+      { id: 'taxi',      label: 'Taxi to RWY',     status: 'Taxiing',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, taxi to holding point runway ${c.depRwy || 'in use'}, QNH ${c.qnh || 'standard'}.` },
       { id: 'taxiGate',  label: 'Taxi to Stand',   status: 'Arrived',   pos: ['Ground'],           build: (cs, s, c) => `${cs}, taxi to stand, welcome to ${c.apt || 'the field'}.` },
-      { id: 'lineup',    label: 'Line Up & Wait',  status: 'Lining Up', pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, line up and wait.` },
-      { id: 'takeoff',   label: 'Cleared Takeoff', status: 'Departing', pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, wind ${c.wind || 'calm'}, cleared for takeoff.` },
-      { id: 'land',      label: 'Cleared to Land', status: 'Landing',   pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, wind ${c.wind || 'calm'}, cleared to land.` },
+      { id: 'lineup',    label: 'Line Up & Wait',  status: 'Lining Up', pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.depRwy || 'in use'}, line up and wait.` },
+      { id: 'takeoff',   label: 'Cleared Takeoff', status: 'Departing', pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.depRwy || 'in use'}, wind ${c.wind || 'calm'}, cleared for takeoff.` },
+      { id: 'land',      label: 'Cleared to Land', status: 'Landing',   pos: ['Tower'],            build: (cs, s, c) => `${cs}, runway ${c.arrRwy || 'in use'}, wind ${c.wind || 'calm'}, cleared to land.` },
       { id: 'twrHand',   label: 'Handoff → TWR',   status: 'Inbound',   pos: ['Center'],           build: (cs, s, c) => `${cs}, contact Tower.` },
       { id: 'ctrHand',   label: 'Handoff → CTR',   status: 'Departed',  pos: ['Tower'],            build: (cs, s, c) => `${cs}, contact Center, good day.` },
       { id: 'climb',     label: 'Climb / On Course', status: 'Climbing', pos: ['Center'],          build: (cs, s, c) => `${cs}, radar contact, climb flight level as filed, proceed on course.` },
-      { id: 'descend',   label: 'Descend / Arrival', status: 'Inbound', pos: ['Center'],           build: (cs, s, c) => `${cs}, descend via the arrival, expect runway ${c.rwy || 'in use'}.` },
-      { id: 'approach',  label: 'Cleared Approach', status: 'Approach', pos: ['Center'],           build: (cs, s, c) => `${cs}, cleared ILS approach runway ${c.rwy || 'in use'}.` },
+      { id: 'descend',   label: 'Descend / Arrival', status: 'Inbound', pos: ['Center'],           build: (cs, s, c) => `${cs}, descend via the arrival, expect runway ${c.arrRwy || 'in use'}.` },
+      { id: 'approach',  label: 'Cleared Approach', status: 'Approach', pos: ['Center'],           build: (cs, s, c) => `${cs}, cleared ILS approach runway ${c.arrRwy || 'in use'}.` },
       { id: 'goaround',  label: 'Go Around',       status: 'Go Around', pos: ['Tower', 'Center'],  build: (cs, s, c) => `${cs}, go around, fly runway heading, climb 3000 feet.` },
     ];
 
@@ -344,28 +348,32 @@
     try { log = JSON.parse(localStorage.getItem('atc-log') || '[]'); } catch {}
 
     const cfgEls = {
-      pos:  document.getElementById('cfg-pos'),
-      apt:  document.getElementById('cfg-apt'),
-      rwy:  document.getElementById('cfg-rwy'),
-      wind: document.getElementById('cfg-wind'),
-      qnh:  document.getElementById('cfg-qnh'),
-      atis: document.getElementById('cfg-atis'),
+      pos:    document.getElementById('cfg-pos'),
+      apt:    document.getElementById('cfg-apt'),
+      depRwy: document.getElementById('cfg-deprwy'),
+      arrRwy: document.getElementById('cfg-arrrwy'),
+      wind:   document.getElementById('cfg-wind'),
+      qnh:    document.getElementById('cfg-qnh'),
+      atis:   document.getElementById('cfg-atis'),
     };
 
     function loadCfg() {
       let c = {};
       try { c = JSON.parse(localStorage.getItem('atc-cfg') || '{}'); } catch {}
-      cfgEls.pos.value  = ['Ground', 'Tower', 'Center'].includes(c.pos) ? c.pos : 'Tower';
-      cfgEls.apt.value  = c.apt  || '';
-      cfgEls.rwy.value  = c.rwy  || '';
-      cfgEls.wind.value = c.wind || '';
-      cfgEls.qnh.value  = c.qnh  || '';
-      cfgEls.atis.value = c.atis || '';
+      cfgEls.pos.value    = ['Ground', 'Tower', 'Center'].includes(c.pos) ? c.pos : 'Tower';
+      cfgEls.apt.value    = c.apt    || '';
+      cfgEls.depRwy.value = c.depRwy || '';
+      cfgEls.arrRwy.value = c.arrRwy || '';
+      cfgEls.wind.value   = c.wind   || '';
+      cfgEls.qnh.value    = c.qnh    || '';
+      cfgEls.atis.value   = c.atis   || '';
     }
     function getCfg() {
       return {
         pos: cfgEls.pos.value, apt: cfgEls.apt.value.trim().toUpperCase(),
-        rwy: cfgEls.rwy.value.trim().toUpperCase(), wind: cfgEls.wind.value.trim(),
+        depRwy: cfgEls.depRwy.value.trim().toUpperCase(),
+        arrRwy: cfgEls.arrRwy.value.trim().toUpperCase(),
+        wind: cfgEls.wind.value.trim(),
         qnh: cfgEls.qnh.value.trim(), atis: cfgEls.atis.value.trim().toUpperCase(),
       };
     }
@@ -477,7 +485,7 @@
     // ATIS broadcast
     document.getElementById('atis-btn').addEventListener('click', () => {
       const c = getCfg();
-      const text = `${c.apt || 'Field'} information ${c.atis || 'A'}, runway ${c.rwy || 'in use'} in use, wind ${c.wind || 'calm'}, QNH ${c.qnh || 'standard'}.`;
+      const text = `${c.apt || 'Field'} information ${c.atis || 'A'}, departure runway ${c.depRwy || 'in use'}, arrival runway ${c.arrRwy || 'in use'}, wind ${c.wind || 'calm'}, QNH ${c.qnh || 'standard'}.`;
       addLog(text, true);
       copyToClipboard(text);
     });
@@ -533,8 +541,7 @@
       data.sort((a, b) => a.airport.localeCompare(b.airport));
       wxList.innerHTML = data.map(a => {
         const p = parseAtis(a.content || '');
-        const firstRwy = (p.dep.split(/\s+/)[0] || '');
-        return `<div class="wx-card" data-apt="${a.airport}" data-rwy="${firstRwy}" data-wind="${p.wind}" data-qnh="${p.qnh}" data-atis="${a.letter}">
+        return `<div class="wx-card" data-apt="${a.airport}" data-dep="${p.dep}" data-arr="${p.arr}" data-wind="${p.wind}" data-qnh="${p.qnh}" data-atis="${a.letter}">
           <div class="wx-top"><span class="wx-icao">${escapeHtml(a.airport)}</span><span class="wx-info">INFO ${escapeHtml(a.letter || '?')}</span></div>
           <div class="wx-meta">🌬 ${p.wind || '—'} · QNH ${p.qnh || '—'} · DEP ${p.dep || '—'} · ARR ${p.arr || '—'}</div>
           <button class="wx-use">→ Load into Station</button>
@@ -542,11 +549,12 @@
       }).join('');
       wxList.querySelectorAll('.wx-card').forEach(card => {
         card.querySelector('.wx-use').addEventListener('click', () => {
-          cfgEls.apt.value  = card.dataset.apt;
-          cfgEls.rwy.value  = card.dataset.rwy;
-          cfgEls.wind.value = card.dataset.wind;
-          cfgEls.qnh.value  = card.dataset.qnh;
-          cfgEls.atis.value = card.dataset.atis;
+          cfgEls.apt.value    = card.dataset.apt;
+          cfgEls.depRwy.value = card.dataset.dep;
+          cfgEls.arrRwy.value = card.dataset.arr;
+          cfgEls.wind.value   = card.dataset.wind;
+          cfgEls.qnh.value    = card.dataset.qnh;
+          cfgEls.atis.value   = card.dataset.atis;
           saveCfg();
           document.querySelector('.rail-btn[data-view="station"]').click();
         });
