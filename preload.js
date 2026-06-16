@@ -9,6 +9,7 @@ try {
     hideFlightEyeWindows: ()       => ipcRenderer.send('hide-flighteye-windows'),
     restoreFlightEyeWindows: ()    => ipcRenderer.send('restore-flighteye-windows'),
     toggleIpad:           ()       => ipcRenderer.send('toggle-ipad'),
+    toggleAtc:            ()       => ipcRenderer.send('toggle-atc'),
     sendDispatchData:     (data)   => ipcRenderer.send('dispatch-data', data),
     onCabinSecured:       (cb)     => ipcRenderer.on('cabin-secured', () => cb()),
   });

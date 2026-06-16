@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes stripIn   { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #0d1117;
+      overflow: hidden;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #e6edf3;
+      animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* Title bar */
+    #titlebar {
+      height: 34px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      flex-shrink: 0;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+    #titlebar-label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #d2a8ff; }
+    #titlebar-label span { color: #8b949e; font-weight: 400; margin-left: 6px; font-size: 0.7rem; text-transform: none; letter-spacing: 0.03em; }
+    #titlebar-right { display: flex; gap: 6px; -webkit-app-region: no-drag; }
+    .tb-btn {
+      background: none; border: 1px solid #30363d; border-radius: 4px; color: #8b949e;
+      cursor: pointer; font-size: 11px; padding: 2px 7px; height: 22px;
+      display: flex; align-items: center; transition: all 0.15s; white-space: nowrap;
+    }
+    .tb-btn:hover    { border-color: #d2a8ff; color: #d2a8ff; }
+    #close-btn:hover { background: #da3633; border-color: #da3633; color: #fff; }
+
+    /* Config strip */
+    #config {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .cfg-field { display: flex; flex-direction: column; gap: 3px; }
+    .cfg-field label { font-size: 0.56rem; letter-spacing: 0.08em; text-transform: uppercase; color: #8b949e; }
+    .cfg-field input, .cfg-field select {
+      background: #0d1117; border: 1px solid #30363d; border-radius: 5px; color: #e6edf3;
+      padding: 4px 6px; font-size: 0.78rem; outline: none; width: 100%;
+    }
+    .cfg-field input:focus, .cfg-field select:focus { border-color: #d2a8ff; }
+    #atis-row {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    #atis-btn {
+      background: #6e40c9; border: none; border-radius: 5px; color: #fff;
+      padding: 5px 12px; font-size: 0.74rem; font-weight: 700; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    }
+    #atis-btn:hover { background: #8957e5; }
+
+    /* Add strip form */
+    #add-form {
+      display: flex;
+      gap: 6px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #30363d;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    #add-form input {
+      background: #0d1117; border: 1px solid #30363d; border-radius: 5px; color: #e6edf3;
+      padding: 5px 8px; font-size: 0.8rem; outline: none;
+    }
+    #add-form input:focus { border-color: #d2a8ff; }
+    #add-cs   { width: 90px; }
+    #add-type { width: 70px; }
+    #add-dep, #add-arr { width: 64px; }
+    #add-btn {
+      background: #238636; border: none; border-radius: 5px; color: #fff;
+      padding: 6px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    }
+    #add-btn:hover { background: #2ea043; }
+
+    /* Strips list */
+    #strips {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+    }
+    #strips::-webkit-scrollbar { width: 5px; }
+    #strips::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    #strips-empty { color: #8b949e; font-size: 0.82rem; text-align: center; margin-top: 30px; line-height: 1.6; }
+
+    .strip {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-left: 3px solid #d2a8ff;
+      border-radius: 7px;
+      padding: 9px 10px;
+      animation: stripIn 0.2s ease both;
+    }
+    .strip-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .strip-cs  { font-size: 0.95rem; font-weight: 800; color: #e6edf3; letter-spacing: 0.04em; }
+    .strip-type { font-size: 0.7rem; color: #8b949e; margin-left: 6px; font-weight: 500; }
+    .strip-badge {
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 12px; border: 1px solid #30363d; color: #8b949e; white-space: nowrap;
+    }
+    .strip-badge.active { border-color: #d2a8ff; color: #d2a8ff; }
+    .strip-badge.done   { border-color: #3fb950; color: #3fb950; }
+    .strip-rm {
+      background: none; border: none; color: #8b949e; cursor: pointer; font-size: 13px; padding: 0 2px; transition: color 0.15s;
+    }
+    .strip-rm:hover { color: #da3633; }
+
+    .strip-meta { font-size: 0.72rem; color: #8b949e; margin: 4px 0 8px; font-family: 'Consolas', monospace; }
+    .strip-meta b { color: #58a6ff; }
+    .strip-sq { color: #e3b341; }
+
+    .strip-actions { display: flex; gap: 6px; }
+    .strip-actions select {
+      flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 5px; color: #e6edf3;
+      padding: 4px 6px; font-size: 0.74rem; outline: none;
+    }
+    .strip-actions select:focus { border-color: #d2a8ff; }
+    .strip-tx {
+      background: #1f6feb; border: none; border-radius: 5px; color: #fff;
+      padding: 4px 12px; font-size: 0.74rem; font-weight: 700; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    }
+    .strip-tx:hover { background: #388bfd; }
+
+    /* Transmission log */
+    #log {
+      flex-shrink: 0;
+      border-top: 1px solid #30363d;
+      background: #0d1117;
+      max-height: 130px;
+      overflow-y: auto;
+      padding: 8px 12px;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+    }
+    #log::-webkit-scrollbar { width: 5px; }
+    #log::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+    #log-title {
+      font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: #8b949e;
+      margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;
+    }
+    #log-clear { background: none; border: 1px solid #30363d; border-radius: 4px; color: #8b949e; cursor: pointer; font-size: 0.6rem; padding: 1px 7px; }
+    #log-clear:hover { border-color: #da3633; color: #da3633; }
+    .log-line { font-size: 0.76rem; line-height: 1.5; color: #c9d1d9; font-family: 'Consolas', monospace; padding: 2px 0; border-bottom: 1px solid #161b22; }
+    .log-line:last-child { border-bottom: none; }
+    .log-line .lt { color: #6e7681; margin-right: 6px; }
+    .log-line.atis { color: #d2a8ff; }
+    .log-empty { color: #6e7681; font-size: 0.72rem; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div id="titlebar">
+    <span id="titlebar-label">📡 ATC <span>— controller station · drag to move</span></span>
+    <div id="titlebar-right">
+      <button class="tb-btn" id="min-btn">—</button>
+      <button class="tb-btn" id="close-btn">✕</button>
+    </div>
+  </div>
+
+  <div id="config">
+    <div class="cfg-field">
+      <label for="cfg-pos">Position</label>
+      <select id="cfg-pos">
+        <option value="Delivery">Delivery</option>
+        <option value="Ground">Ground</option>
+        <option value="Tower" selected>Tower</option>
+        <option value="Approach">Approach</option>
+        <option value="Departure">Departure</option>
+        <option value="Center">Center</option>
+      </select>
+    </div>
+    <div class="cfg-field">
+      <label for="cfg-apt">Airport</label>
+      <input type="text" id="cfg-apt" placeholder="IRFD" />
+    </div>
+    <div class="cfg-field">
+      <label for="cfg-rwy">Active RWY</label>
+      <input type="text" id="cfg-rwy" placeholder="27L" />
+    </div>
+    <div class="cfg-field">
+      <label for="cfg-wind">Wind</label>
+      <input type="text" id="cfg-wind" placeholder="270/08" />
+    </div>
+    <div class="cfg-field">
+      <label for="cfg-qnh">QNH</label>
+      <input type="text" id="cfg-qnh" placeholder="1013" />
+    </div>
+    <div class="cfg-field">
+      <label for="cfg-atis">ATIS</label>
+      <input type="text" id="cfg-atis" placeholder="A" maxlength="1" />
+    </div>
+    <div id="atis-row">
+      <button id="atis-btn">📢 Broadcast ATIS</button>
+      <span style="font-size:0.68rem;color:#8b949e">Generates the ATIS line into the log below.</span>
+    </div>
+  </div>
+
+  <form id="add-form" autocomplete="off">
+    <input type="text" id="add-cs"   placeholder="Callsign" />
+    <input type="text" id="add-type" placeholder="Type" />
+    <input type="text" id="add-dep"  placeholder="From" />
+    <input type="text" id="add-arr"  placeholder="To" />
+    <button type="submit" id="add-btn">+ Add Strip</button>
+  </form>
+
+  <div id="strips">
+    <div id="strips-empty">No active aircraft.<br>Add a strip above for each aircraft you're working.</div>
+  </div>
+
+  <div id="log">
+    <div id="log-title"><span>Transmission Log</span><button id="log-clear">Clear</button></div>
+    <div id="log-body"><div class="log-empty">Instructions you issue will appear here.</div></div>
+  </div>
+
+  <script>
+    // ── Instruction templates (controller → pilot) ──────────────────────────
+    const INSTRUCTIONS = [
+      { id: 'clearance', label: 'IFR Clearance',   status: 'Cleared',   build: (cs, s, c) => `${cs}, cleared to ${s.arr || 'destination'} as filed, squawk ${s.squawk}.` },
+      { id: 'startup',   label: 'Startup',         status: 'Startup',   build: (cs, s, c) => `${cs}, startup approved, information ${c.atis || 'current'}, QNH ${c.qnh || 'standard'}.` },
+      { id: 'pushback',  label: 'Pushback',        status: 'Pushback',  build: (cs, s, c) => `${cs}, pushback approved.` },
+      { id: 'taxi',      label: 'Taxi to RWY',     status: 'Taxiing',   build: (cs, s, c) => `${cs}, taxi to holding point runway ${c.rwy || 'in use'}, QNH ${c.qnh || 'standard'}.` },
+      { id: 'lineup',    label: 'Line Up & Wait',  status: 'Lining Up', build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, line up and wait.` },
+      { id: 'takeoff',   label: 'Cleared Takeoff', status: 'Departing', build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, wind ${c.wind || 'calm'}, cleared for takeoff.` },
+      { id: 'depHand',   label: 'Handoff → DEP',   status: 'Departed',  build: (cs, s, c) => `${cs}, contact Departure, good day.` },
+      { id: 'descend',   label: 'Descend / Arrival', status: 'Inbound', build: (cs, s, c) => `${cs}, descend via the arrival, expect runway ${c.rwy || 'in use'}.` },
+      { id: 'approach',  label: 'Cleared Approach', status: 'Approach', build: (cs, s, c) => `${cs}, cleared ILS approach runway ${c.rwy || 'in use'}.` },
+      { id: 'twrHand',   label: 'Handoff → TWR',   status: 'Approach',  build: (cs, s, c) => `${cs}, contact Tower.` },
+      { id: 'land',      label: 'Cleared to Land', status: 'Landing',   build: (cs, s, c) => `${cs}, runway ${c.rwy || 'in use'}, wind ${c.wind || 'calm'}, cleared to land.` },
+      { id: 'goaround',  label: 'Go Around',       status: 'Go Around', build: (cs, s, c) => `${cs}, go around, fly runway heading, climb 3000 feet.` },
+      { id: 'taxiGate',  label: 'Taxi to Stand',   status: 'Arrived',   build: (cs, s, c) => `${cs}, taxi to stand, welcome to ${c.apt || 'the field'}.` },
+      { id: 'handoffCtr',label: 'Handoff → CTR',   status: 'Handed Off',build: (cs, s, c) => `${cs}, contact Center, good day.` },
+    ];
+
+    const DONE_STATUSES = new Set(['Departed', 'Arrived', 'Handed Off']);
+
+    let strips = [];
+    try { strips = JSON.parse(localStorage.getItem('atc-strips') || '[]'); } catch {}
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem('atc-log') || '[]'); } catch {}
+
+    const cfgEls = {
+      pos:  document.getElementById('cfg-pos'),
+      apt:  document.getElementById('cfg-apt'),
+      rwy:  document.getElementById('cfg-rwy'),
+      wind: document.getElementById('cfg-wind'),
+      qnh:  document.getElementById('cfg-qnh'),
+      atis: document.getElementById('cfg-atis'),
+    };
+
+    function loadCfg() {
+      let c = {};
+      try { c = JSON.parse(localStorage.getItem('atc-cfg') || '{}'); } catch {}
+      cfgEls.pos.value  = c.pos  || 'Tower';
+      cfgEls.apt.value  = c.apt  || '';
+      cfgEls.rwy.value  = c.rwy  || '';
+      cfgEls.wind.value = c.wind || '';
+      cfgEls.qnh.value  = c.qnh  || '';
+      cfgEls.atis.value = c.atis || '';
+    }
+    function getCfg() {
+      return {
+        pos: cfgEls.pos.value, apt: cfgEls.apt.value.trim().toUpperCase(),
+        rwy: cfgEls.rwy.value.trim().toUpperCase(), wind: cfgEls.wind.value.trim(),
+        qnh: cfgEls.qnh.value.trim(), atis: cfgEls.atis.value.trim().toUpperCase(),
+      };
+    }
+    function saveCfg() { localStorage.setItem('atc-cfg', JSON.stringify(getCfg())); }
+    Object.values(cfgEls).forEach(el => el.addEventListener('input', saveCfg));
+
+    function saveStrips() { localStorage.setItem('atc-strips', JSON.stringify(strips)); }
+    function saveLog()    { localStorage.setItem('atc-log', JSON.stringify(log.slice(-40))); }
+
+    function genSquawk() {
+      const reserved = new Set(['7500', '7600', '7700', '7000', '1200', '0000']);
+      let c;
+      do { c = ''; for (let i = 0; i < 4; i++) c += Math.floor(Math.random() * 8); }
+      while (reserved.has(c) || strips.some(s => s.squawk === c));
+      return c;
+    }
+
+    function addLog(text, isAtis) {
+      const now = new Date();
+      const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      log.push({ t, text, atis: !!isAtis });
+      saveLog();
+      renderLog();
+    }
+
+    function renderLog() {
+      const body = document.getElementById('log-body');
+      if (!log.length) { body.innerHTML = '<div class="log-empty">Instructions you issue will appear here.</div>'; return; }
+      body.innerHTML = log.slice(-20).map(l =>
+        `<div class="log-line ${l.atis ? 'atis' : ''}"><span class="lt">${l.t}</span>${escapeHtml(l.text)}</div>`
+      ).join('');
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[c])); }
+
+    function renderStrips() {
+      const wrap = document.getElementById('strips');
+      const empty = document.getElementById('strips-empty');
+      wrap.querySelectorAll('.strip').forEach(n => n.remove());
+      if (!strips.length) { empty.style.display = 'block'; return; }
+      empty.style.display = 'none';
+
+      strips.forEach((s, idx) => {
+        const div = document.createElement('div');
+        div.className = 'strip';
+        const badgeClass = DONE_STATUSES.has(s.status) ? 'done' : (s.status === 'New' ? '' : 'active');
+        const opts = INSTRUCTIONS.map(i => `<option value="${i.id}">${i.label}</option>`).join('');
+        div.innerHTML = `
+          <div class="strip-top">
+            <div><span class="strip-cs">${escapeHtml(s.cs)}</span><span class="strip-type">${escapeHtml(s.type || '')}</span></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="strip-badge ${badgeClass}">${escapeHtml(s.status)}</span>
+              <button class="strip-rm" title="Remove">✕</button>
+            </div>
+          </div>
+          <div class="strip-meta">${escapeHtml(s.dep || '???')} → ${escapeHtml(s.arr || '???')} · <span class="strip-sq">SQ ${s.squawk}</span></div>
+          <div class="strip-actions">
+            <select>${opts}</select>
+            <button class="strip-tx">▶ Transmit</button>
+          </div>`;
+        const select = div.querySelector('select');
+        div.querySelector('.strip-tx').addEventListener('click', () => transmit(idx, select.value));
+        div.querySelector('.strip-rm').addEventListener('click', () => { strips.splice(idx, 1); saveStrips(); renderStrips(); });
+        wrap.appendChild(div);
+      });
+    }
+
+    function transmit(idx, instrId) {
+      const s = strips[idx];
+      const instr = INSTRUCTIONS.find(i => i.id === instrId);
+      if (!s || !instr) return;
+      const text = instr.build(s.cs, s, getCfg());
+      s.status = instr.status;
+      saveStrips();
+      renderStrips();
+      addLog(text, false);
+      copyToClipboard(text);
+    }
+
+    function copyToClipboard(text) {
+      if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).catch(() => {});
+    }
+
+    // Add strip
+    document.getElementById('add-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const cs = document.getElementById('add-cs').value.trim().toUpperCase();
+      if (!cs) return;
+      strips.push({
+        cs,
+        type: document.getElementById('add-type').value.trim().toUpperCase(),
+        dep:  document.getElementById('add-dep').value.trim().toUpperCase(),
+        arr:  document.getElementById('add-arr').value.trim().toUpperCase(),
+        squawk: genSquawk(),
+        status: 'New',
+      });
+      saveStrips();
+      renderStrips();
+      e.target.reset();
+      document.getElementById('add-cs').focus();
+    });
+
+    // ATIS broadcast
+    document.getElementById('atis-btn').addEventListener('click', () => {
+      const c = getCfg();
+      const text = `${c.apt || 'Field'} information ${c.atis || 'A'}, runway ${c.rwy || 'in use'} in use, wind ${c.wind || 'calm'}, QNH ${c.qnh || 'standard'}.`;
+      addLog(text, true);
+      copyToClipboard(text);
+    });
+
+    document.getElementById('log-clear').addEventListener('click', () => { log = []; saveLog(); renderLog(); });
+
+    document.getElementById('min-btn').addEventListener('click', () => window.atcAPI?.minimizeAtc());
+    document.getElementById('close-btn').addEventListener('click', () => window.close());
+
+    loadCfg();
+    renderStrips();
+    renderLog();
+  </script>
+</body>
+</html>

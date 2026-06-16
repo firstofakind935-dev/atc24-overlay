@@ -449,6 +449,26 @@
       color: #0d1117;
     }
 
+    #bar-atc-btn {
+      background: none;
+      border: 1px solid #d2a8ff;
+      border-radius: 4px;
+      color: #d2a8ff;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      height: 28px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+      transition: all 0.15s;
+    }
+
+    #bar-atc-btn:hover {
+      background-color: #d2a8ff;
+      color: #0d1117;
+    }
+
     #bar-status {
       display: none;
       align-items: center;
@@ -525,6 +545,7 @@
     <button id="bar-flighteye-btn" title="Toggle small Flight Eye widget">👁 Flight Eye</button>
     <button id="bar-femap-btn" title="Toggle large Flight Eye map">🗺 Large Map</button>
     <button id="bar-ipad-btn" title="Toggle iPad">📱 iPad</button>
+    <button id="bar-atc-btn" title="Toggle ATC controller station">📡 ATC</button>
     <button id="bar-expand-btn">▼</button>
     <button id="bar-shrink-btn" title="Minimise to pill">⊟</button>
     <button id="bar-close-btn" title="Close overlay">✕</button>
@@ -1129,6 +1150,10 @@
 
     document.getElementById("bar-ipad-btn").addEventListener("click", () => {
       window.electronAPI?.toggleIpad();
+    });
+
+    document.getElementById("bar-atc-btn").addEventListener("click", () => {
+      window.electronAPI?.toggleAtc();
     });
 
     const barStatus = document.getElementById("bar-status");

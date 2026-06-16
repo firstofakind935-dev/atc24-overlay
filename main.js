@@ -12,6 +12,7 @@ let win;
 let feWin;
 let feLargeWin;
 let ipadWin;
+let atcWin;
 
 // ─── Persistent bounds ────────────────────────────────────────────────────────
 let settingsPath;
@@ -148,6 +149,37 @@ function createIpadWindow() {
   ipadWin.on('closed', () => { ipadWin = null; });
 }
 
+// ─── ATC controller station ───────────────────────────────────────────────────
+function createAtcWindow() {
+  const { width } = screen.getPrimaryDisplay().workAreaSize;
+  const def = { width: 540, height: 600, x: width - 560, y: 60 };
+  const b = getBounds('atc', def);
+
+  atcWin = new BrowserWindow({
+    width: b.width, height: b.height, x: b.x, y: b.y,
+    frame: false, transparent: false,
+    resizable: true, movable: true,
+    skipTaskbar: true, hasShadow: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'atc-preload.js'),
+      contextIsolation: true, nodeIntegration: false,
+    },
+  });
+
+  atcWin.loadFile('atc.html');
+  atcWin.setAlwaysOnTop(true, 'pop-up-menu');
+
+  atcWin.on('resize', () => saveBoundsOf('atc', atcWin));
+  atcWin.on('move',   () => saveBoundsOf('atc', atcWin));
+  atcWin.on('minimize', () => { saveBoundsOf('atc', atcWin); atcWin.hide(); });
+  atcWin.on('close', (e) => {
+    e.preventDefault();
+    saveBoundsOf('atc', atcWin);
+    atcWin.hide();
+  });
+  atcWin.on('closed', () => { atcWin = null; });
+}
+
 // ─── Main overlay ─────────────────────────────────────────────────────────────
 function createWindow() {
   const { width } = screen.getPrimaryDisplay().workAreaSize;
@@ -178,6 +210,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
   if (ipadWin)    { ipadWin.removeAllListeners('close');    ipadWin.close(); }
+  if (atcWin)     { atcWin.removeAllListeners('close');     atcWin.close(); }
   if (process.platform !== 'darwin') app.quit();
 });
 
@@ -204,6 +237,7 @@ ipcMain.on('restore-flighteye-windows', () => {
 ipcMain.on('close-window', () => {
   if (feLargeWin) { feLargeWin.removeAllListeners('close'); feLargeWin.close(); }
   if (ipadWin)    { ipadWin.removeAllListeners('close');    ipadWin.close(); }
+  if (atcWin)     { atcWin.removeAllListeners('close');     atcWin.close(); }
   if (feWin) feWin.close();
   if (win)   win.close();
 });
@@ -238,6 +272,16 @@ ipcMain.on('toggle-ipad', () => {
 
 ipcMain.on('minimize-ipad', () => {
   if (ipadWin) { saveBoundsOf('ipad', ipadWin); ipadWin.hide(); }
+});
+
+ipcMain.on('toggle-atc', () => {
+  if (!atcWin) { createAtcWindow(); return; }
+  if (atcWin.isVisible()) { saveBoundsOf('atc', atcWin); atcWin.hide(); }
+  else { atcWin.show(); }
+});
+
+ipcMain.on('minimize-atc', () => {
+  if (atcWin) { saveBoundsOf('atc', atcWin); atcWin.hide(); }
 });
 
 ipcMain.on('show-ipad', () => {
