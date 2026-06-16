@@ -803,11 +803,7 @@
       }
 
       let speeds = null;
-      try {
-        speeds = Object.entries(V_SPEEDS).find(
-          ([k]) => k.toLowerCase() === aircraft.toLowerCase()
-        )?.[1] || null;
-      } catch {} // V_SPEEDS not yet defined on the initial load-time call
+      try { speeds = getAdjustedSpeeds(); } catch {} // not yet defined on the initial load-time call
 
       window.electronAPI?.sendDispatchData({
         callsign,
@@ -896,11 +892,39 @@
     const arrRunwayEl  = document.getElementById("arr-runway");
     const vspeedNoteEl = document.getElementById("vspeed-note");
 
-    function updateVSpeeds() {
+    // Deterministic per-runway offset (kt): shorter/limiting runways shift the
+    // numbers. Same runway → same offset, so values are stable, not random.
+    function rwyAdjust(rwy, kind) {
+      if (!rwy) return 0;
+      let h = 0;
+      const s = rwy.toUpperCase();
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+      h = Math.abs(h);
+      return kind === "to" ? (h % 10) - 4   // takeoff: -4..+5 kt
+                           : (h % 6) - 2;   // landing: -2..+3 kt
+    }
+
+    // Aircraft base speeds adjusted for the selected runways (used everywhere)
+    function getAdjustedSpeeds() {
       const aircraft = aircraftEl.value.trim();
-      const speeds = Object.entries(V_SPEEDS).find(
+      const base = Object.entries(V_SPEEDS).find(
         ([k]) => k.toLowerCase() === aircraft.toLowerCase()
       )?.[1];
+      if (!base) return null;
+      const toAdj  = rwyAdjust(depRunwayEl.value.trim(), "to");
+      const ldgAdj = rwyAdjust(arrRunwayEl.value.trim(), "ldg");
+      return {
+        v1:   base.v1   + toAdj,
+        vr:   base.vr   + toAdj,
+        v2:   base.v2   + toAdj,
+        vref: base.vref + ldgAdj,
+        vapp: base.vapp + ldgAdj,
+      };
+    }
+
+    function updateVSpeeds() {
+      const aircraft = aircraftEl.value.trim();
+      const speeds = getAdjustedSpeeds();
 
       const depRwy = depRunwayEl.value.trim();
       const arrRwy = arrRunwayEl.value.trim();
@@ -937,6 +961,10 @@
     aircraftEl.addEventListener("change", updateVSpeeds);
     depRunwayEl.addEventListener("input", updateVSpeeds);
     arrRunwayEl.addEventListener("input", updateVSpeeds);
+    depRunwayEl.addEventListener("input", updateBar);
+    arrRunwayEl.addEventListener("input", updateBar);
+    depRunwayEl.addEventListener("input", updateCommand);
+    arrRunwayEl.addEventListener("input", updateCommand);
 
     updateVSpeeds();
 
@@ -1018,9 +1046,7 @@
       const callsign = callsignEl.value.trim();
       barAircraftEl.textContent = callsign || "— No callsign —";
 
-      const speeds = Object.entries(V_SPEEDS).find(
-        ([k]) => k.toLowerCase() === aircraft.toLowerCase()
-      )?.[1];
+      const speeds = getAdjustedSpeeds();
 
       if (barPhase === "takeoff") {
         barName1El.textContent = "V1";
