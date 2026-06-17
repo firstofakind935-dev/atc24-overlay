@@ -1481,12 +1481,12 @@
       bdSave(); bdRender();
     }
 
-    // Full-load duration (ms): passengers ~1 min · cargo 90s (light) → 120s (full) by pallets
+    // Full-load duration (ms): passengers ~1 min · cargo 30s (6 pallets) → 120s (40 pallets)
     function bdDuration() {
       const s = bdState;
       if (!s.freight) return 60000;
-      const t = 90000 + ((s.target - 6) / 34) * 30000;   // pallets span 6–40
-      return Math.max(90000, Math.min(120000, t));
+      const t = 30000 + ((s.target - 6) / 34) * 90000;   // pallets span 6–40
+      return Math.max(30000, Math.min(120000, t));
     }
 
     // Smoothly move `boarded` to `goal` over `dur` ms, time-based so it works for any size
