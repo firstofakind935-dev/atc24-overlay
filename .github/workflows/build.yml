@@ -16,6 +16,7 @@ jobs:
           node-version: 20
       - run: npm install
       - run: npx @electron/packager . "ATC24 Overlay" --platform=win32 --arch=x64 --out=dist --overwrite --ignore="dist|\.git|docs"
+        shell: bash
       - name: Zip Windows build
         run: Compress-Archive -Path "dist/ATC24 Overlay-win32-x64" -DestinationPath "ATC24-Overlay-Windows.zip"
         shell: pwsh
