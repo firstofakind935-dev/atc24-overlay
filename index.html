@@ -678,17 +678,17 @@
       <div id="vspeed-display">
         <div class="vspeed-col">
           <div class="vspeed-header">TAKEOFF <span id="dep-runway-label"></span></div>
-          <div class="vspeed-row"><span class="vspeed-name">V1</span><input class="vspeed-input" id="v1-in" type="number" min="0" placeholder="—" /></div>
-          <div class="vspeed-row"><span class="vspeed-name">VR</span><input class="vspeed-input" id="vr-in" type="number" min="0" placeholder="—" /></div>
-          <div class="vspeed-row"><span class="vspeed-name">V2</span><input class="vspeed-input" id="v2-in" type="number" min="0" placeholder="—" /></div>
+          <div class="vspeed-row"><span class="vspeed-name">V1</span><span class="vspeed-val" id="v1-val">—</span></div>
+          <div class="vspeed-row"><span class="vspeed-name">VR</span><span class="vspeed-val" id="vr-val">—</span></div>
+          <div class="vspeed-row"><span class="vspeed-name">V2</span><span class="vspeed-val" id="v2-val">—</span></div>
         </div>
         <div class="vspeed-col">
           <div class="vspeed-header">LANDING <span id="arr-runway-label"></span></div>
-          <div class="vspeed-row"><span class="vspeed-name">Vapp</span><input class="vspeed-input" id="vapp-in" type="number" min="0" placeholder="—" /></div>
-          <div class="vspeed-row"><span class="vspeed-name">Vref</span><input class="vspeed-input" id="vref-in" type="number" min="0" placeholder="—" /></div>
+          <div class="vspeed-row"><span class="vspeed-name">Vapp</span><span class="vspeed-val" id="vapp-val">—</span></div>
+          <div class="vspeed-row"><span class="vspeed-name">Vref</span><span class="vspeed-val" id="vref-val">—</span></div>
         </div>
       </div>
-      <p id="vspeed-note">Enter your V-speeds manually (from your FMC / charts).</p>
+      <p id="vspeed-note"></p>
     </div>
   </div>
   <script>
@@ -863,7 +863,7 @@
       }
 
       let speeds = null;
-      try { speeds = readManualSpeeds(); } catch {} // not yet defined on the initial load-time call
+      try { speeds = getAdjustedSpeeds(); } catch {} // not yet defined on the initial load-time call
 
       window.electronAPI?.sendDispatchData({
         callsign,
@@ -965,34 +965,57 @@
                            : (h % 6) - 2;   // landing: -2..+3 kt
     }
 
-    const v1InEl   = document.getElementById("v1-in");
-    const vrInEl   = document.getElementById("vr-in");
-    const v2InEl   = document.getElementById("v2-in");
-    const vappInEl = document.getElementById("vapp-in");
-    const vrefInEl = document.getElementById("vref-in");
-
-    // V-speeds are entered manually by the pilot — no auto-generation
-    function readManualSpeeds() {
-      const p = (el) => { const n = parseInt(el.value, 10); return Number.isFinite(n) ? n : null; };
-      const v1 = p(v1InEl), vr = p(vrInEl), v2 = p(v2InEl), vapp = p(vappInEl), vref = p(vrefInEl);
-      if (v1 == null && vr == null && v2 == null && vapp == null && vref == null) return null;
-      return { v1, vr, v2, vref, vapp };
+    // Takeoff speeds appear once a DEPARTURE runway is entered; landing speeds
+    // once an ARRIVAL runway is entered. Nothing is shown from the aircraft alone.
+    function getAdjustedSpeeds() {
+      const aircraft = aircraftEl.value.trim();
+      const base = Object.entries(V_SPEEDS).find(
+        ([k]) => k.toLowerCase() === aircraft.toLowerCase()
+      )?.[1];
+      if (!base) return null;
+      const depRwy = depRunwayEl.value.trim();
+      const arrRwy = arrRunwayEl.value.trim();
+      const out = {};
+      if (depRwy) {
+        const a = rwyAdjust(depRwy, "to");
+        out.v1 = base.v1 + a; out.vr = base.vr + a; out.v2 = base.v2 + a;
+      }
+      if (arrRwy) {
+        const a = rwyAdjust(arrRwy, "ldg");
+        out.vref = base.vref + a; out.vapp = base.vapp + a;
+      }
+      return out;
     }
 
-    function updateRunwayLabels() {
+    function updateVSpeeds() {
+      const aircraft = aircraftEl.value.trim();
       const depRwy = depRunwayEl.value.trim();
       const arrRwy = arrRunwayEl.value.trim();
       document.getElementById("dep-runway-label").textContent = depRwy ? `— RWY ${depRwy}` : "";
       document.getElementById("arr-runway-label").textContent = arrRwy ? `— RWY ${arrRwy}` : "";
+
+      const s = getAdjustedSpeeds();
+      const set = (id, v) => {
+        const el = document.getElementById(id);
+        const has = v != null;
+        el.textContent = has ? `${v} kts` : "—";
+        el.classList.toggle("na", !has);
+      };
+      set("v1-val",   s && s.v1);   set("vr-val",   s && s.vr);   set("v2-val", s && s.v2);
+      set("vapp-val", s && s.vapp); set("vref-val", s && s.vref);
+
+      vspeedNoteEl.textContent =
+        !aircraft ? ""
+        : (!depRwy && !arrRwy) ? "Enter a runway to show V-speeds."
+        : "Estimated from aircraft type + runway.";
     }
 
-    depRunwayEl.addEventListener("input", updateRunwayLabels);
-    arrRunwayEl.addEventListener("input", updateRunwayLabels);
-    [v1InEl, vrInEl, v2InEl, vappInEl, vrefInEl].forEach(el => {
-      el.addEventListener("input", () => { updateBar(); updateCommand(); saveForm(); });
-    });
+    aircraftEl.addEventListener("input",  updateVSpeeds);
+    aircraftEl.addEventListener("change", updateVSpeeds);
+    depRunwayEl.addEventListener("input", () => { updateVSpeeds(); updateBar(); updateCommand(); });
+    arrRunwayEl.addEventListener("input", () => { updateVSpeeds(); updateBar(); updateCommand(); });
 
-    updateRunwayLabels();
+    updateVSpeeds();
 
     const copyBtn = document.getElementById("copy-btn");
 
@@ -1026,13 +1049,11 @@
       routeEl.value = "";
       depRunwayEl.value = "";
       arrRunwayEl.value = "";
-      v1InEl.value = ""; vrInEl.value = ""; v2InEl.value = "";
-      vappInEl.value = ""; vrefInEl.value = "";
       isCargo = false;
       renderCargoToggle();
       localStorage.removeItem("fp-state");
       updateCommand();
-      updateRunwayLabels();
+      updateVSpeeds();
       setExpanded(false);
       setBarPhase("takeoff");
     });
@@ -1076,7 +1097,7 @@
       const callsign = callsignEl.value.trim();
       barAircraftEl.textContent = callsign || "— No callsign —";
 
-      const speeds = readManualSpeeds();
+      const speeds = getAdjustedSpeeds();
       const kt = (v) => (v || v === 0) ? `${v} kts` : "—";
 
       if (barPhase === "takeoff") {
@@ -1223,8 +1244,6 @@
         depRwy:     depRunwayEl.value,
         arrRwy:     arrRunwayEl.value,
         cargo:      isCargo,
-        v1: v1InEl.value, vr: vrInEl.value, v2: v2InEl.value,
-        vapp: vappInEl.value, vref: vrefInEl.value,
       }));
     }
 
@@ -1253,16 +1272,11 @@
       routeEl.value          = d.route    || "";
       depRunwayEl.value      = d.depRwy   || "";
       arrRunwayEl.value      = d.arrRwy   || "";
-      v1InEl.value   = d.v1   || "";
-      vrInEl.value   = d.vr   || "";
-      v2InEl.value   = d.v2   || "";
-      vappInEl.value = d.vapp || "";
-      vrefInEl.value = d.vref || "";
       isCargo                = !!d.cargo;
       renderCargoToggle();
       flightRulesEl.value    = d.rules    || "";
       updateFlightRulesForAircraft();
-      updateRunwayLabels();
+      updateVSpeeds();
       updateBar();
       updateCommand();
     })();
