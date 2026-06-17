@@ -1142,7 +1142,7 @@
           <div class="bd-ls-title">Load &amp; Trim Sheet (kg)</div>
           <div class="bd-ls-row"><span class="lbl">Passengers (<span id="ls-pax-n">0</span> @ 84)</span><span class="val" id="ls-pax">—</span></div>
           <div class="bd-ls-row"><span class="lbl">Baggage (<span id="ls-bag-n">0</span> @ 15)</span><span class="val" id="ls-bag">—</span></div>
-          <div class="bd-ls-row"><span class="lbl">Cargo / Freight</span><span class="val" id="ls-cargo">—</span></div>
+          <div class="bd-ls-row"><span class="lbl" id="ls-cargo-lbl">Cargo / Freight</span><span class="val" id="ls-cargo">—</span></div>
           <div class="bd-ls-row total"><span class="lbl">Total Payload</span><span class="val" id="ls-payload">—</span></div>
           <div class="bd-ls-row"><span class="lbl">Operating Empty Wt</span><span class="val" id="ls-oew">—</span></div>
           <div class="bd-ls-row total zfw"><span class="lbl">Zero Fuel Weight</span><span class="val" id="ls-zfw">—</span></div>
@@ -1443,17 +1443,19 @@
       if (!data) return null;
       const freight = !!data.freight || !!forceCargo;
       const lf = 0.78 + (bdHash(key) % 1801) / 10000;            // deterministic 78–96%
-      let target, cargo;
+      let target, cargo, palletTarget = 0;
       if (freight) {
         cargo  = data.freight ? data.cargo : bdFreightPayload(data, key);
         target = Math.max(6, Math.min(40, Math.round(cargo / 1500)));   // pallets to load
       } else {
         target = Math.round(data.seats * lf);
         cargo  = data.cargo + Math.round((bdHash(key + 'c') % 41) / 100 * data.cargo);
+        palletTarget = Math.max(1, Math.min(10, Math.round(cargo / 700)));  // belly pallets (max 10)
       }
       return {
         aircraft: ac, key, freight, seats: data.seats,
-        target, boarded: 0, boarding: false, phase: 'board', cargo, oew: data.oew,
+        target, boarded: 0, boarding: false, phase: 'board',
+        palletTarget, pallets: 0, cargo, oew: data.oew,
         lf: Math.round(lf * 100),
       };
     }
@@ -1481,21 +1483,29 @@
       bdSave(); bdRender();
     }
 
-    // Full-load duration (ms): passengers ~1 min · cargo 30s (6 pallets) → 120s (40 pallets)
+    // Cargo full-load duration (ms): 30s (6 pallets) → 120s (40 pallets)
     function bdDuration() {
-      const s = bdState;
-      if (!s.freight) return 60000;
-      const t = 30000 + ((s.target - 6) / 34) * 90000;   // pallets span 6–40
-      return Math.max(30000, Math.min(120000, t));
+      return Math.max(30000, Math.min(120000, 30000 + ((bdState.target - 6) / 34) * 90000));
+    }
+    // Belly-pallet load duration (ms) for passenger flights (≤10 pallets, cargo timing)
+    function bdPalletDuration(p) {
+      return Math.max(12000, Math.min(120000, 30000 + ((p - 6) / 34) * 90000));
     }
 
-    // Smoothly move `boarded` to `goal` over `dur` ms, time-based so it works for any size
+    // Fully loaded? (passengers + belly pallets)
+    function bdLoaded() {
+      const s = bdState;
+      const paxDone = s.boarded >= s.target;
+      const palDone = s.freight || !s.palletTarget || (s.pallets || 0) >= s.palletTarget;
+      return paxDone && palDone;
+    }
+
+    // Single-track animator (freighters: boarded = pallets)
     function bdAnimate(goal, dur, onDone) {
-      const startBoarded = bdState.boarded;
-      const startTime = Date.now();
+      const start = bdState.boarded, t0 = Date.now();
       bdTimer = setInterval(() => {
-        const prog = dur <= 0 ? 1 : Math.min(1, (Date.now() - startTime) / dur);
-        bdState.boarded = Math.round(startBoarded + (goal - startBoarded) * prog);
+        const prog = dur <= 0 ? 1 : Math.min(1, (Date.now() - t0) / dur);
+        bdState.boarded = Math.round(start + (goal - start) * prog);
         if (prog >= 1) {
           bdState.boarded = goal;
           clearInterval(bdTimer); bdTimer = null;
@@ -1507,33 +1517,68 @@
       }, 300);
     }
 
+    // Dual-track: passengers (~1 min) + belly pallets (cargo timing) load concurrently
+    function bdRunPax(reverse, onDone) {
+      const s = bdState, t0 = Date.now();
+      const startPax = s.boarded, startPal = s.pallets || 0;
+      const paxGoal = reverse ? 0 : s.target;
+      const palGoal = reverse ? 0 : (s.palletTarget || 0);
+      const paxDur = 60000 * (s.target ? Math.abs(paxGoal - startPax) / s.target : 0);
+      const palDur = s.palletTarget ? bdPalletDuration(s.palletTarget) * (Math.abs(palGoal - startPal) / s.palletTarget) : 0;
+      const total  = Math.max(paxDur, palDur);
+      bdTimer = setInterval(() => {
+        const e = Date.now() - t0;
+        s.boarded = Math.round(startPax + (paxGoal - startPax) * (paxDur ? Math.min(1, e / paxDur) : 1));
+        s.pallets = Math.round(startPal + (palGoal - startPal) * (palDur ? Math.min(1, e / palDur) : 1));
+        if (e >= total) {
+          s.boarded = paxGoal; s.pallets = palGoal;
+          clearInterval(bdTimer); bdTimer = null;
+          s.boarding = false; bdSave();
+          if (onDone) onDone(); else bdRender();
+          return;
+        }
+        bdSave(); bdRender();
+      }, 300);
+    }
+
     function bdStart() {
-      if (!bdState || bdState.phase === 'deboard' || bdState.boarded >= bdState.target || bdTimer) return;
+      if (!bdState || bdState.phase === 'deboard' || bdLoaded() || bdTimer) return;
       bdEnsureAudio();
       bdState.boarding = true; bdSave();
-      const frac = (bdState.target - bdState.boarded) / bdState.target;   // resume-aware
-      bdAnimate(bdState.target, bdDuration() * frac, () => bdBeginFinalize());
+      if (bdState.freight) {
+        const frac = (bdState.target - bdState.boarded) / bdState.target;
+        bdAnimate(bdState.target, bdDuration() * frac, () => bdBeginFinalize());
+      } else {
+        bdRunPax(false, () => bdBeginFinalize());
+      }
     }
 
     function bdBoardAll() {
-      if (!bdState || bdState.phase === 'deboard' || bdState.boarded >= bdState.target) return;
+      if (!bdState || bdState.phase === 'deboard' || bdLoaded()) return;
       bdEnsureAudio();
       if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
       bdState.boarded = bdState.target;
+      if (!bdState.freight) bdState.pallets = bdState.palletTarget || 0;
       bdState.boarding = false;
       bdSave(); bdBeginFinalize();
     }
 
-    // Deboard / unload — counts the load back down to zero
+    // Deboard / unload — counts the load (pax + pallets) back down to zero
     function bdDeboard() {
-      if (!bdState || bdState.boarded <= 0 || bdTimer) return;
+      if (!bdState || bdTimer) return;
+      const hasLoad = bdState.boarded > 0 || (!bdState.freight && (bdState.pallets || 0) > 0);
+      if (!hasLoad) return;
       bdClearFinalize();
       bdSecured = false;
       bdState.phase = 'deboard';
       bdState.boarding = true;
       bdSave();
-      const frac = bdState.boarded / bdState.target;   // proportional to what's left
-      bdAnimate(0, bdDuration() * frac, null);
+      if (bdState.freight) {
+        const frac = bdState.boarded / bdState.target;
+        bdAnimate(0, bdDuration() * frac, null);
+      } else {
+        bdRunPax(true, null);
+      }
     }
 
     function bdReset() {
@@ -1542,6 +1587,7 @@
       bdClearFinalize();
       bdSecured = false;
       bdState.boarded = 0;
+      bdState.pallets = 0;
       bdState.boarding = false;
       bdState.phase = 'board';
       bdSave(); bdRender();
@@ -1556,8 +1602,9 @@
       const s = bdState;
       const cargo      = s.freight;
       const deboarding = s.phase === 'deboard';
-      const emptied    = deboarding && s.boarded <= 0;
-      const allAboard  = !deboarding && s.boarded >= s.target;
+      const hasLoad    = s.boarded > 0 || (!cargo && (s.pallets || 0) > 0);
+      const emptied    = deboarding && !hasLoad;
+      const allAboard  = !deboarding && bdLoaded();
       const finalizing = allAboard && bdFinalizeEnd > Date.now();
       const remain     = Math.max(0, Math.ceil((bdFinalizeEnd - Date.now()) / 1000));
       const preparing  = finalizing && remain <= 15;   // last 15s
@@ -1616,17 +1663,17 @@
       // controls
       document.getElementById('bd-start').disabled = deboarding || allAboard;
       document.getElementById('bd-all').disabled   = deboarding || allAboard;
-      document.getElementById('bd-reset').disabled = s.boarded === 0 && s.phase === 'board';
+      document.getElementById('bd-reset').disabled = !hasLoad && s.phase === 'board';
       document.getElementById('bd-start').textContent =
-        (!bdTimer && s.boarded > 0 && !allAboard && !deboarding)
+        (!bdTimer && hasLoad && !allAboard && !deboarding)
           ? (cargo ? '▶ Resume Loading' : '▶ Resume Boarding')
           : (cargo ? '▶ Start Loading'  : '▶ Start Boarding');
       document.getElementById('bd-all').textContent = cargo ? '⏭ Load All' : '⏭ Board All';
 
       const deboardBtn = document.getElementById('bd-deboard');
-      deboardBtn.disabled = s.boarded <= 0 || bdTimer;
+      deboardBtn.disabled = !hasLoad || bdTimer;
       deboardBtn.textContent =
-        (deboarding && !bdTimer && s.boarded > 0)
+        (deboarding && !bdTimer && hasLoad)
           ? (cargo ? '⏏ Resume Unload' : '⏏ Resume Deboard')
           : (cargo ? '⏏ Unload' : '⏏ Deboard');
 
@@ -1634,10 +1681,17 @@
       const pax     = cargo ? 0 : s.boarded;
       const paxWt   = pax * PAX_WT;
       const bagWt   = pax * BAG_WT;
-      const cargoWt = cargo ? Math.round(s.cargo * (s.target ? s.boarded / s.target : 0)) : s.cargo;
+      const cargoWt = cargo
+        ? Math.round(s.cargo * (s.target ? s.boarded / s.target : 0))
+        : (s.palletTarget ? Math.round(s.cargo * ((s.pallets || 0) / s.palletTarget)) : s.cargo);
       const payload = paxWt + bagWt + cargoWt;
       const zfw     = s.oew + payload;
       const fmt = (n) => n.toLocaleString('en-US');
+
+      const cargoLblEl = document.getElementById('ls-cargo-lbl');
+      if (cargoLblEl) cargoLblEl.textContent = (!cargo && s.palletTarget)
+        ? `Belly cargo (${s.pallets || 0}/${s.palletTarget} plt)`
+        : 'Cargo / Freight';
 
       document.getElementById('ls-pax-n').textContent  = pax;
       document.getElementById('ls-bag-n').textContent  = pax;
@@ -1658,8 +1712,11 @@
 
     // Resume an in-progress boarding/deboarding interrupted by a full close/restart
     if (bdState && bdState.boarding) {
-      if (bdState.phase === 'deboard' && bdState.boarded > 0) bdDeboard();
-      else if (bdState.phase !== 'deboard' && bdState.boarded < bdState.target) bdStart();
+      if (bdState.phase === 'deboard') {
+        if (bdState.boarded > 0 || (bdState.pallets || 0) > 0) bdDeboard();
+      } else if (!bdLoaded()) {
+        bdStart();
+      }
     }
 
     // ════════════════════════════════════
