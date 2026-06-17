@@ -1134,6 +1134,7 @@
         <div class="bd-controls">
           <button class="bd-btn bd-btn-go" id="bd-start">▶ Start Boarding</button>
           <button class="bd-btn" id="bd-all">⏭ Board All</button>
+          <button class="bd-btn" id="bd-deboard">⏏ Deboard</button>
           <button class="bd-btn" id="bd-reset">↺ Reset</button>
         </div>
 
@@ -1452,7 +1453,7 @@
       }
       return {
         aircraft: ac, key, freight, seats: data.seats,
-        target, boarded: 0, boarding: false, cargo, oew: data.oew,
+        target, boarded: 0, boarding: false, phase: 'board', cargo, oew: data.oew,
         lf: Math.round(lf * 100),
       };
     }
@@ -1481,7 +1482,7 @@
     }
 
     function bdStart() {
-      if (!bdState || bdState.boarded >= bdState.target || bdTimer) return;
+      if (!bdState || bdState.phase === 'deboard' || bdState.boarded >= bdState.target || bdTimer) return;
       bdEnsureAudio();
       bdState.boarding = true; bdSave();
       bdTimer = setInterval(() => {
@@ -1496,12 +1497,31 @@
     }
 
     function bdBoardAll() {
-      if (!bdState) return;
+      if (!bdState || bdState.phase === 'deboard' || bdState.boarded >= bdState.target) return;
       bdEnsureAudio();
       if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
       bdState.boarded = bdState.target;
       bdState.boarding = false;
       bdSave(); bdBeginFinalize();
+    }
+
+    // Deboard / unload — counts the load back down to zero
+    function bdDeboard() {
+      if (!bdState || bdState.boarded <= 0 || bdTimer) return;
+      bdClearFinalize();
+      bdSecured = false;
+      bdState.phase = 'deboard';
+      bdState.boarding = true;
+      bdSave();
+      bdTimer = setInterval(() => {
+        if (bdState.boarded <= 0) {
+          clearInterval(bdTimer); bdTimer = null;
+          bdState.boarded = 0; bdState.boarding = false; bdSave(); bdRender(); return;
+        }
+        const burst = Math.max(1, Math.round(bdState.target / 150));
+        bdState.boarded = Math.max(0, bdState.boarded - burst);
+        bdSave(); bdRender();
+      }, 400);
     }
 
     function bdReset() {
@@ -1511,6 +1531,7 @@
       bdSecured = false;
       bdState.boarded = 0;
       bdState.boarding = false;
+      bdState.phase = 'board';
       bdSave(); bdRender();
     }
 
@@ -1522,8 +1543,10 @@
 
       const s = bdState;
       const cargo      = s.freight;
-      const allAboard  = s.boarded >= s.target;
-      const finalizing = s.boarded >= s.target && bdFinalizeEnd > Date.now();
+      const deboarding = s.phase === 'deboard';
+      const emptied    = deboarding && s.boarded <= 0;
+      const allAboard  = !deboarding && s.boarded >= s.target;
+      const finalizing = allAboard && bdFinalizeEnd > Date.now();
       const remain     = Math.max(0, Math.ceil((bdFinalizeEnd - Date.now()) / 1000));
       const preparing  = finalizing && remain <= 15;   // last 15s
       const pct = s.target ? (s.boarded / s.target) * 100 : 0;
@@ -1538,7 +1561,10 @@
       // status pill
       const statusEl = document.getElementById('bd-status');
       statusEl.classList.remove('boarding', 'done', 'secured');
-      if (finalizing)                  { statusEl.textContent = cargo ? 'Securing Load' : (preparing ? 'Preparing Cabin' : 'Doors Closing'); statusEl.classList.add('boarding'); }
+      if (emptied)                     { statusEl.textContent = cargo ? 'Unloaded' : 'Disembarked'; statusEl.classList.add('done'); }
+      else if (deboarding && bdTimer)  { statusEl.textContent = cargo ? 'Unloading' : 'Deboarding'; statusEl.classList.add('boarding'); }
+      else if (deboarding)             { statusEl.textContent = 'Paused'; statusEl.classList.add('boarding'); }
+      else if (finalizing)             { statusEl.textContent = cargo ? 'Securing Load' : (preparing ? 'Preparing Cabin' : 'Doors Closing'); statusEl.classList.add('boarding'); }
       else if (bdSecured && allAboard) { statusEl.textContent = cargo ? 'Cargo Secured' : 'Cabin Secured'; statusEl.classList.add('secured'); }
       else if (allAboard)              { statusEl.textContent = cargo ? 'Loaded'   : 'Complete'; statusEl.classList.add('done'); }
       else if (bdTimer)                { statusEl.textContent = cargo ? 'Loading'  : 'Boarding'; statusEl.classList.add('boarding'); }
@@ -1551,7 +1577,9 @@
       const labelEl = document.getElementById('bd-count-label');
       labelEl.classList.toggle('secured', bdSecured && allAboard);
       labelEl.textContent =
-        (bdSecured && allAboard) ? (cargo ? 'Cargo secured · ready for pushback' : 'Cabin secured · ready for pushback')
+        emptied      ? (cargo ? 'Cargo unloaded' : 'All passengers off')
+        : deboarding ? (cargo ? 'Cargo unloading' : 'Passengers deplaning')
+        : (bdSecured && allAboard) ? (cargo ? 'Cargo secured · ready for pushback' : 'Cabin secured · ready for pushback')
         : preparing  ? `${cargo ? 'Securing load' : 'Preparing cabin'} — ${remain}s`
         : finalizing ? `${cargo ? 'Securing load' : 'Doors closing'} — ${remain}s`
         : cargo ? 'Pallets loaded' : 'Passengers boarded';
@@ -1559,9 +1587,9 @@
       document.getElementById('bd-bar-fill').style.width = `${pct}%`;
       document.getElementById('bd-pct').textContent = `${Math.round(pct)}%`;
 
-      // zones (boarding groups) — passengers only
-      document.getElementById('bd-zones').style.display = cargo ? 'none' : '';
-      if (!cargo) {
+      // zones (boarding groups) — passengers only, while boarding
+      document.getElementById('bd-zones').style.display = (cargo || deboarding) ? 'none' : '';
+      if (!cargo && !deboarding) {
         const zonesDone = Math.floor(pct / 20);
         document.querySelectorAll('#bd-zones .bd-zone').forEach((z, i) => {
           z.classList.remove('active', 'done');
@@ -1574,14 +1602,21 @@
       }
 
       // controls
-      document.getElementById('bd-start').disabled = allAboard;
-      document.getElementById('bd-all').disabled   = allAboard;
-      document.getElementById('bd-reset').disabled = s.boarded === 0;
+      document.getElementById('bd-start').disabled = deboarding || allAboard;
+      document.getElementById('bd-all').disabled   = deboarding || allAboard;
+      document.getElementById('bd-reset').disabled = s.boarded === 0 && s.phase === 'board';
       document.getElementById('bd-start').textContent =
-        (!bdTimer && s.boarded > 0 && !allAboard)
+        (!bdTimer && s.boarded > 0 && !allAboard && !deboarding)
           ? (cargo ? '▶ Resume Loading' : '▶ Resume Boarding')
           : (cargo ? '▶ Start Loading'  : '▶ Start Boarding');
       document.getElementById('bd-all').textContent = cargo ? '⏭ Load All' : '⏭ Board All';
+
+      const deboardBtn = document.getElementById('bd-deboard');
+      deboardBtn.disabled = s.boarded <= 0 || bdTimer;
+      deboardBtn.textContent =
+        (deboarding && !bdTimer && s.boarded > 0)
+          ? (cargo ? '⏏ Resume Unload' : '⏏ Resume Deboard')
+          : (cargo ? '⏏ Unload' : '⏏ Deboard');
 
       // load sheet
       const pax     = cargo ? 0 : s.boarded;
@@ -1604,13 +1639,15 @@
 
     document.getElementById('bd-start').addEventListener('click', bdStart);
     document.getElementById('bd-all').addEventListener('click', bdBoardAll);
+    document.getElementById('bd-deboard').addEventListener('click', bdDeboard);
     document.getElementById('bd-reset').addEventListener('click', bdReset);
 
     bdRender();
 
-    // Resume boarding that was interrupted by a full close/restart
-    if (bdState && bdState.boarding && !bdState.freight && bdState.boarded < bdState.target) {
-      bdStart();
+    // Resume an in-progress boarding/deboarding interrupted by a full close/restart
+    if (bdState && bdState.boarding) {
+      if (bdState.phase === 'deboard' && bdState.boarded > 0) bdDeboard();
+      else if (bdState.phase !== 'deboard' && bdState.boarded < bdState.target) bdStart();
     }
 
     // ════════════════════════════════════
