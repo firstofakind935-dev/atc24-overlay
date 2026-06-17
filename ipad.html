@@ -1481,19 +1481,38 @@
       bdSave(); bdRender();
     }
 
+    // Full-load duration (ms): passengers ~1 min · cargo 90s (light) → 120s (full) by pallets
+    function bdDuration() {
+      const s = bdState;
+      if (!s.freight) return 60000;
+      const t = 90000 + ((s.target - 6) / 34) * 30000;   // pallets span 6–40
+      return Math.max(90000, Math.min(120000, t));
+    }
+
+    // Smoothly move `boarded` to `goal` over `dur` ms, time-based so it works for any size
+    function bdAnimate(goal, dur, onDone) {
+      const startBoarded = bdState.boarded;
+      const startTime = Date.now();
+      bdTimer = setInterval(() => {
+        const prog = dur <= 0 ? 1 : Math.min(1, (Date.now() - startTime) / dur);
+        bdState.boarded = Math.round(startBoarded + (goal - startBoarded) * prog);
+        if (prog >= 1) {
+          bdState.boarded = goal;
+          clearInterval(bdTimer); bdTimer = null;
+          bdState.boarding = false; bdSave();
+          if (onDone) onDone(); else bdRender();
+          return;
+        }
+        bdSave(); bdRender();
+      }, 300);
+    }
+
     function bdStart() {
       if (!bdState || bdState.phase === 'deboard' || bdState.boarded >= bdState.target || bdTimer) return;
       bdEnsureAudio();
       bdState.boarding = true; bdSave();
-      bdTimer = setInterval(() => {
-        if (bdState.boarded >= bdState.target) {
-          clearInterval(bdTimer); bdTimer = null;
-          bdState.boarding = false; bdSave(); bdBeginFinalize(); return;
-        }
-        const burst = Math.max(1, Math.round(bdState.target / 150));
-        bdState.boarded = Math.min(bdState.target, bdState.boarded + burst);
-        bdSave(); bdRender();
-      }, 400);
+      const frac = (bdState.target - bdState.boarded) / bdState.target;   // resume-aware
+      bdAnimate(bdState.target, bdDuration() * frac, () => bdBeginFinalize());
     }
 
     function bdBoardAll() {
@@ -1513,15 +1532,8 @@
       bdState.phase = 'deboard';
       bdState.boarding = true;
       bdSave();
-      bdTimer = setInterval(() => {
-        if (bdState.boarded <= 0) {
-          clearInterval(bdTimer); bdTimer = null;
-          bdState.boarded = 0; bdState.boarding = false; bdSave(); bdRender(); return;
-        }
-        const burst = Math.max(1, Math.round(bdState.target / 150));
-        bdState.boarded = Math.max(0, bdState.boarded - burst);
-        bdSave(); bdRender();
-      }, 400);
+      const frac = bdState.boarded / bdState.target;   // proportional to what's left
+      bdAnimate(0, bdDuration() * frac, null);
     }
 
     function bdReset() {
