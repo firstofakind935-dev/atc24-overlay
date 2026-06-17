@@ -442,6 +442,23 @@
     }
     .ofp-3.ofp-total .lbl { color: #1a1a2e; font-weight: 800; }
 
+    /* Highlighter */
+    #ds-toolbar { display: flex; gap: 8px; margin-bottom: 10px; }
+    #hl-toggle, #hl-clear {
+      background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+      color: #e6edf3; padding: 5px 12px; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+      transition: all 0.15s;
+    }
+    #hl-toggle.active { background: #e3b341; border-color: #e3b341; color: #1a1a2e; }
+    #hl-clear:hover   { border-color: #da3633; color: #da3633; }
+    .ofp.hl-mode [data-hlk]        { cursor: pointer; }
+    .ofp.hl-mode [data-hlk]:hover  { outline: 1px dashed #c9a227; outline-offset: 1px; }
+    .ofp .hl {
+      background: #fff27a;
+      box-shadow: 0 0 0 2px #fff27a;
+      border-radius: 2px;
+    }
+
     /* Dispatch release */
     .ds-fuel {
       margin-top: 6px;
@@ -917,6 +934,10 @@
 
     <!-- DISPATCH -->
     <div class="panel active" id="panel-dispatch">
+      <div id="ds-toolbar">
+        <button id="hl-toggle">🖍 Highlighter</button>
+        <button id="hl-clear">Clear</button>
+      </div>
       <div id="dispatch-placeholder">
         <div class="ph-icon">📄</div>
         <p>Fill in the flight plan generator in the overlay bar to generate your dispatch sheet.</p>
@@ -1391,6 +1412,39 @@
     }
 
     window.ipadAPI?.onDispatchData(renderDispatch);
+
+    // ── Highlighter ──────────────────────────────────────────────────────────
+    (function initHighlighter() {
+      const ofp = document.querySelector('.ofp');
+      if (!ofp) return;
+      let hlMode = false;
+      let hlSet = new Set();
+      try { hlSet = new Set(JSON.parse(localStorage.getItem('ofp-hl') || '[]')); } catch {}
+      const saveHl = () => localStorage.setItem('ofp-hl', JSON.stringify([...hlSet]));
+
+      ofp.querySelectorAll('[id], .ofp-h, .lbl').forEach(el => {
+        const key = el.id || ('t:' + (el.textContent || '').trim().slice(0, 40));
+        el.dataset.hlk = key;
+        if (hlSet.has(key)) el.classList.add('hl');
+        el.addEventListener('click', () => {
+          if (!hlMode) return;
+          el.classList.toggle('hl');
+          if (el.classList.contains('hl')) hlSet.add(key); else hlSet.delete(key);
+          saveHl();
+        });
+      });
+
+      const toggle = document.getElementById('hl-toggle');
+      toggle.addEventListener('click', () => {
+        hlMode = !hlMode;
+        toggle.classList.toggle('active', hlMode);
+        ofp.classList.toggle('hl-mode', hlMode);
+      });
+      document.getElementById('hl-clear').addEventListener('click', () => {
+        ofp.querySelectorAll('.hl').forEach(el => el.classList.remove('hl'));
+        hlSet.clear(); saveHl();
+      });
+    })();
 
     // ════════════════════════════════════
     // BOARDING

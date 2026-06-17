@@ -270,6 +270,20 @@
       color: #8b949e;
     }
 
+    .vspeed-input {
+      width: 5rem;
+      background-color: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 5px;
+      color: #3fb950;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.95rem;
+      text-align: right;
+      padding: 0.15rem 0.4rem;
+      outline: none;
+    }
+    .vspeed-input:focus { border-color: #58a6ff; }
+
     #vspeed-note {
       font-size: 0.75rem;
       color: #8b949e;
@@ -664,17 +678,17 @@
       <div id="vspeed-display">
         <div class="vspeed-col">
           <div class="vspeed-header">TAKEOFF <span id="dep-runway-label"></span></div>
-          <div class="vspeed-row"><span class="vspeed-name">V1</span><span class="vspeed-val" id="v1-val">—</span></div>
-          <div class="vspeed-row"><span class="vspeed-name">VR</span><span class="vspeed-val" id="vr-val">—</span></div>
-          <div class="vspeed-row"><span class="vspeed-name">V2</span><span class="vspeed-val" id="v2-val">—</span></div>
+          <div class="vspeed-row"><span class="vspeed-name">V1</span><input class="vspeed-input" id="v1-in" type="number" min="0" placeholder="—" /></div>
+          <div class="vspeed-row"><span class="vspeed-name">VR</span><input class="vspeed-input" id="vr-in" type="number" min="0" placeholder="—" /></div>
+          <div class="vspeed-row"><span class="vspeed-name">V2</span><input class="vspeed-input" id="v2-in" type="number" min="0" placeholder="—" /></div>
         </div>
         <div class="vspeed-col">
           <div class="vspeed-header">LANDING <span id="arr-runway-label"></span></div>
-          <div class="vspeed-row"><span class="vspeed-name">Vapp</span><span class="vspeed-val" id="vapp-val">—</span></div>
-          <div class="vspeed-row"><span class="vspeed-name">Vref</span><span class="vspeed-val" id="vref-val">—</span></div>
+          <div class="vspeed-row"><span class="vspeed-name">Vapp</span><input class="vspeed-input" id="vapp-in" type="number" min="0" placeholder="—" /></div>
+          <div class="vspeed-row"><span class="vspeed-name">Vref</span><input class="vspeed-input" id="vref-in" type="number" min="0" placeholder="—" /></div>
         </div>
       </div>
-      <p id="vspeed-note"></p>
+      <p id="vspeed-note">Enter your V-speeds manually (from your FMC / charts).</p>
     </div>
   </div>
   <script>
@@ -849,7 +863,7 @@
       }
 
       let speeds = null;
-      try { speeds = getAdjustedSpeeds(); } catch {} // not yet defined on the initial load-time call
+      try { speeds = readManualSpeeds(); } catch {} // not yet defined on the initial load-time call
 
       window.electronAPI?.sendDispatchData({
         callsign,
@@ -951,69 +965,34 @@
                            : (h % 6) - 2;   // landing: -2..+3 kt
     }
 
-    // Aircraft base speeds adjusted for the selected runways (used everywhere)
-    function getAdjustedSpeeds() {
-      const aircraft = aircraftEl.value.trim();
-      const base = Object.entries(V_SPEEDS).find(
-        ([k]) => k.toLowerCase() === aircraft.toLowerCase()
-      )?.[1];
-      if (!base) return null;
-      const toAdj  = rwyAdjust(depRunwayEl.value.trim(), "to");
-      const ldgAdj = rwyAdjust(arrRunwayEl.value.trim(), "ldg");
-      return {
-        v1:   base.v1   + toAdj,
-        vr:   base.vr   + toAdj,
-        v2:   base.v2   + toAdj,
-        vref: base.vref + ldgAdj,
-        vapp: base.vapp + ldgAdj,
-      };
+    const v1InEl   = document.getElementById("v1-in");
+    const vrInEl   = document.getElementById("vr-in");
+    const v2InEl   = document.getElementById("v2-in");
+    const vappInEl = document.getElementById("vapp-in");
+    const vrefInEl = document.getElementById("vref-in");
+
+    // V-speeds are entered manually by the pilot — no auto-generation
+    function readManualSpeeds() {
+      const p = (el) => { const n = parseInt(el.value, 10); return Number.isFinite(n) ? n : null; };
+      const v1 = p(v1InEl), vr = p(vrInEl), v2 = p(v2InEl), vapp = p(vappInEl), vref = p(vrefInEl);
+      if (v1 == null && vr == null && v2 == null && vapp == null && vref == null) return null;
+      return { v1, vr, v2, vref, vapp };
     }
 
-    function updateVSpeeds() {
-      const aircraft = aircraftEl.value.trim();
-      const speeds = getAdjustedSpeeds();
-
+    function updateRunwayLabels() {
       const depRwy = depRunwayEl.value.trim();
       const arrRwy = arrRunwayEl.value.trim();
-
       document.getElementById("dep-runway-label").textContent = depRwy ? `— RWY ${depRwy}` : "";
       document.getElementById("arr-runway-label").textContent = arrRwy ? `— RWY ${arrRwy}` : "";
-
-      const ids = ["v1-val", "vr-val", "v2-val", "vapp-val", "vref-val"];
-
-      if (speeds) {
-        const values = [speeds.v1, speeds.vr, speeds.v2, speeds.vapp, speeds.vref];
-        ids.forEach((id, i) => {
-          const el = document.getElementById(id);
-          el.textContent = `${values[i]} kts`;
-          el.classList.remove("na");
-        });
-        const isEstimated = !["A220","A320","A330","A350","A380","B737","B747","B777","B787","ATR-72"].some(
-          a => a.toLowerCase() === aircraft.toLowerCase()
-        );
-        vspeedNoteEl.textContent = isEstimated
-          ? "~ Estimated values (aircraft not in ptfsperf dataset)."
-          : "* Data sourced from cityusergh.github.io/ptfsperf — V1 uses typical runway approximation.";
-      } else {
-        ids.forEach(id => {
-          const el = document.getElementById(id);
-          el.textContent = aircraft ? "N/A" : "—";
-          el.classList.toggle("na", !!aircraft);
-        });
-        vspeedNoteEl.textContent = aircraft ? "No V-speed data for this aircraft type." : "";
-      }
     }
 
-    aircraftEl.addEventListener("input", updateVSpeeds);
-    aircraftEl.addEventListener("change", updateVSpeeds);
-    depRunwayEl.addEventListener("input", updateVSpeeds);
-    arrRunwayEl.addEventListener("input", updateVSpeeds);
-    depRunwayEl.addEventListener("input", updateBar);
-    arrRunwayEl.addEventListener("input", updateBar);
-    depRunwayEl.addEventListener("input", updateCommand);
-    arrRunwayEl.addEventListener("input", updateCommand);
+    depRunwayEl.addEventListener("input", updateRunwayLabels);
+    arrRunwayEl.addEventListener("input", updateRunwayLabels);
+    [v1InEl, vrInEl, v2InEl, vappInEl, vrefInEl].forEach(el => {
+      el.addEventListener("input", () => { updateBar(); updateCommand(); saveForm(); });
+    });
 
-    updateVSpeeds();
+    updateRunwayLabels();
 
     const copyBtn = document.getElementById("copy-btn");
 
@@ -1047,11 +1026,13 @@
       routeEl.value = "";
       depRunwayEl.value = "";
       arrRunwayEl.value = "";
+      v1InEl.value = ""; vrInEl.value = ""; v2InEl.value = "";
+      vappInEl.value = ""; vrefInEl.value = "";
       isCargo = false;
       renderCargoToggle();
       localStorage.removeItem("fp-state");
       updateCommand();
-      updateVSpeeds();
+      updateRunwayLabels();
       setExpanded(false);
       setBarPhase("takeoff");
     });
@@ -1095,21 +1076,22 @@
       const callsign = callsignEl.value.trim();
       barAircraftEl.textContent = callsign || "— No callsign —";
 
-      const speeds = getAdjustedSpeeds();
+      const speeds = readManualSpeeds();
+      const kt = (v) => (v || v === 0) ? `${v} kts` : "—";
 
       if (barPhase === "takeoff") {
         barName1El.textContent = "V1";
         barName2El.textContent = "VR";
         barName3El.textContent = "V2";
-        barVal1El.textContent = speeds ? `${speeds.v1} kts` : "—";
-        barVal2El.textContent = speeds ? `${speeds.vr} kts` : "—";
-        barVal3El.textContent = speeds ? `${speeds.v2} kts` : "—";
+        barVal1El.textContent = kt(speeds && speeds.v1);
+        barVal2El.textContent = kt(speeds && speeds.vr);
+        barVal3El.textContent = kt(speeds && speeds.v2);
       } else {
         barName1El.textContent = "Vapp";
         barName2El.textContent = "Vref";
         barName3El.textContent = "";
-        barVal1El.textContent = speeds ? `${speeds.vapp} kts` : "—";
-        barVal2El.textContent = speeds ? `${speeds.vref} kts` : "—";
+        barVal1El.textContent = kt(speeds && speeds.vapp);
+        barVal2El.textContent = kt(speeds && speeds.vref);
         barVal3El.textContent = "";
       }
 
@@ -1241,6 +1223,8 @@
         depRwy:     depRunwayEl.value,
         arrRwy:     arrRunwayEl.value,
         cargo:      isCargo,
+        v1: v1InEl.value, vr: vrInEl.value, v2: v2InEl.value,
+        vapp: vappInEl.value, vref: vrefInEl.value,
       }));
     }
 
@@ -1269,11 +1253,16 @@
       routeEl.value          = d.route    || "";
       depRunwayEl.value      = d.depRwy   || "";
       arrRunwayEl.value      = d.arrRwy   || "";
+      v1InEl.value   = d.v1   || "";
+      vrInEl.value   = d.vr   || "";
+      v2InEl.value   = d.v2   || "";
+      vappInEl.value = d.vapp || "";
+      vrefInEl.value = d.vref || "";
       isCargo                = !!d.cargo;
       renderCargoToggle();
       flightRulesEl.value    = d.rules    || "";
       updateFlightRulesForAircraft();
-      updateVSpeeds();
+      updateRunwayLabels();
       updateBar();
       updateCommand();
     })();
