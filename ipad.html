@@ -451,8 +451,7 @@
     }
     #hl-toggle.active { background: #e3b341; border-color: #e3b341; color: #1a1a2e; }
     #hl-clear:hover   { border-color: #da3633; color: #da3633; }
-    .ofp.hl-mode [data-hlk]        { cursor: pointer; }
-    .ofp.hl-mode [data-hlk]:hover  { outline: 1px dashed #c9a227; outline-offset: 1px; }
+    .ofp.hl-mode, .ofp.hl-mode * { cursor: pointer; }
     .ofp .hl {
       background: #fff27a;
       box-shadow: 0 0 0 2px #fff27a;
@@ -1413,36 +1412,49 @@
 
     window.ipadAPI?.onDispatchData(renderDispatch);
 
-    // ── Highlighter ──────────────────────────────────────────────────────────
+    // ── Highlighter (event-delegated, marks any clicked element) ─────────────
     (function initHighlighter() {
-      const ofp = document.querySelector('.ofp');
-      if (!ofp) return;
+      const ofp     = document.querySelector('.ofp');
+      const toggle  = document.getElementById('hl-toggle');
+      const clearBt = document.getElementById('hl-clear');
+      if (!ofp || !toggle) return;
+
       let hlMode = false;
       let hlSet = new Set();
       try { hlSet = new Set(JSON.parse(localStorage.getItem('ofp-hl') || '[]')); } catch {}
-      const saveHl = () => localStorage.setItem('ofp-hl', JSON.stringify([...hlSet]));
+      const save = () => localStorage.setItem('ofp-hl', JSON.stringify([...hlSet]));
 
-      ofp.querySelectorAll('[id], .ofp-h, .lbl').forEach(el => {
-        const key = el.id || ('t:' + (el.textContent || '').trim().slice(0, 40));
-        el.dataset.hlk = key;
-        if (hlSet.has(key)) el.classList.add('hl');
-        el.addEventListener('click', () => {
-          if (!hlMode) return;
-          el.classList.toggle('hl');
-          if (el.classList.contains('hl')) hlSet.add(key); else hlSet.delete(key);
-          saveHl();
-        });
-      });
+      // Stable key = path of child indices from .ofp down to the element
+      function keyOf(el) {
+        const parts = [];
+        for (let n = el; n && n !== ofp; n = n.parentNode) {
+          parts.unshift([...n.parentNode.children].indexOf(n));
+        }
+        return parts.join('-');
+      }
+      function elByKey(k) {
+        let n = ofp;
+        for (const idx of k.split('-')) { n = n && n.children[+idx]; }
+        return n;
+      }
+      hlSet.forEach(k => { const el = elByKey(k); if (el) el.classList.add('hl'); });
 
-      const toggle = document.getElementById('hl-toggle');
       toggle.addEventListener('click', () => {
         hlMode = !hlMode;
         toggle.classList.toggle('active', hlMode);
         ofp.classList.toggle('hl-mode', hlMode);
       });
-      document.getElementById('hl-clear').addEventListener('click', () => {
+      clearBt.addEventListener('click', () => {
         ofp.querySelectorAll('.hl').forEach(el => el.classList.remove('hl'));
-        hlSet.clear(); saveHl();
+        hlSet.clear(); save();
+      });
+      ofp.addEventListener('click', (e) => {
+        if (!hlMode || e.target === ofp) return;
+        const el = e.target;
+        el.classList.toggle('hl');
+        const k = keyOf(el);
+        if (el.classList.contains('hl')) hlSet.add(k); else hlSet.delete(k);
+        save();
       });
     })();
 
