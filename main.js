@@ -344,8 +344,8 @@ ipcMain.on('show-ipad', () => {
   if (ipadWin && !ipadWin.isVisible()) ipadWin.show();
 });
 
-ipcMain.on('cabin-secured', () => {
-  if (win) win.webContents.send('cabin-secured');
+ipcMain.on('cabin-secured', (_e, label) => {
+  if (win) win.webContents.send('cabin-secured', label);
 });
 
 ipcMain.on('get-boarding', (e) => { e.returnValue = boardingState; });

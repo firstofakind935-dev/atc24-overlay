@@ -1408,9 +1408,9 @@
       bdCountdownIV = setInterval(bdRender, 1000);   // tick the countdown text
       bdFinalizeTO  = setTimeout(() => {
         bdClearFinalize();
-        bdSecured = true;                            // cabin secured
-        bdPlayChime();                               // ding — boarding complete
-        window.ipadAPI?.cabinSecured();              // notify the overlay bar
+        bdSecured = true;                            // cabin/cargo secured
+        bdPlayChime();                               // ding — complete
+        window.ipadAPI?.cabinSecured(bdState && bdState.freight ? 'Cargo Secured' : 'Cabin Secured');
         bdRender();
       }, 30000);
       bdRender();
@@ -1427,15 +1427,32 @@
       return h >>> 0;
     }
 
-    function bdCompute(ac, key) {
+    // Structural freight payload (kg) by aircraft size, with a small stable variance
+    function bdFreightPayload(data, key) {
+      let base;
+      if (data.seats >= 450)      base = 100000;
+      else if (data.seats >= 250) base = 65000;
+      else if (data.seats >= 150) base = 22000;
+      else                        base = 7000;   // regional / props
+      return Math.round(base * (0.85 + (bdHash(key + 'fp') % 21) / 100));  // ±
+    }
+
+    function bdCompute(ac, key, forceCargo) {
       const data = ACFT[ac];
       if (!data) return null;
-      const lf    = 0.78 + (bdHash(key) % 1801) / 10000;        // deterministic 78–96%
-      const target = data.freight ? 0 : Math.round(data.seats * lf);
-      const extra  = data.freight ? 0 : Math.round((bdHash(key + 'c') % 41) / 100 * data.cargo);
+      const freight = !!data.freight || !!forceCargo;
+      const lf = 0.78 + (bdHash(key) % 1801) / 10000;            // deterministic 78–96%
+      let target, cargo;
+      if (freight) {
+        cargo  = data.freight ? data.cargo : bdFreightPayload(data, key);
+        target = Math.max(6, Math.min(40, Math.round(cargo / 1500)));   // pallets to load
+      } else {
+        target = Math.round(data.seats * lf);
+        cargo  = data.cargo + Math.round((bdHash(key + 'c') % 41) / 100 * data.cargo);
+      }
       return {
-        aircraft: ac, key, freight: !!data.freight, seats: data.seats,
-        target, boarded: 0, boarding: false, cargo: data.cargo + extra, oew: data.oew,
+        aircraft: ac, key, freight, seats: data.seats,
+        target, boarded: 0, boarding: false, cargo, oew: data.oew,
         lf: Math.round(lf * 100),
       };
     }
@@ -1454,16 +1471,17 @@
         bdClearFinalize(); bdSecured = false;
         bdState = null; bdSave(); bdRender(); return;
       }
-      const key = bdFlightKey(d);
+      const forceCargo = !!d.cargo;
+      const key = bdFlightKey(d) + (forceCargo ? '|C' : '');
       if (bdState && bdState.key === key) { bdRender(); return; }  // same flight → keep progress
       if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
       bdClearFinalize(); bdSecured = false;
-      bdState = bdCompute(ac, key);
+      bdState = bdCompute(ac, key, forceCargo);
       bdSave(); bdRender();
     }
 
     function bdStart() {
-      if (!bdState || bdState.freight || bdState.boarded >= bdState.target || bdTimer) return;
+      if (!bdState || bdState.boarded >= bdState.target || bdTimer) return;
       bdEnsureAudio();
       bdState.boarding = true; bdSave();
       bdTimer = setInterval(() => {
@@ -1478,7 +1496,7 @@
     }
 
     function bdBoardAll() {
-      if (!bdState || bdState.freight) return;
+      if (!bdState) return;
       bdEnsureAudio();
       if (bdTimer) { clearInterval(bdTimer); bdTimer = null; }
       bdState.boarded = bdState.target;
@@ -1503,66 +1521,74 @@
       ph.style.display = 'none'; body.style.display = 'block';
 
       const s = bdState;
-      const allAboard  = s.freight || s.boarded >= s.target;
-      const finalizing = !s.freight && s.boarded >= s.target && bdFinalizeEnd > Date.now();
+      const cargo      = s.freight;
+      const allAboard  = s.boarded >= s.target;
+      const finalizing = s.boarded >= s.target && bdFinalizeEnd > Date.now();
       const remain     = Math.max(0, Math.ceil((bdFinalizeEnd - Date.now()) / 1000));
-      const preparing  = finalizing && remain <= 15;   // last 15s = cabin prep
-      const pct = s.target ? (s.boarded / s.target) * 100 : 100;
+      const preparing  = finalizing && remain <= 15;   // last 15s
+      const pct = s.target ? (s.boarded / s.target) * 100 : 0;
+
+      const boardingTab = document.querySelector('.ipad-tab[data-tab="boarding"]');
+      if (boardingTab) boardingTab.textContent = cargo ? '📦 Loading' : '🧳 Boarding';
 
       document.getElementById('bd-acft-name').textContent = s.aircraft;
       document.getElementById('bd-acft-cap').textContent =
-        s.freight ? 'Freighter — cargo only'
-                  : `${s.seats} seats · ${s.lf}% load factor`;
+        cargo ? `Cargo · ${s.target} pallets` : `${s.seats} seats · ${s.lf}% load factor`;
 
       // status pill
       const statusEl = document.getElementById('bd-status');
       statusEl.classList.remove('boarding', 'done', 'secured');
-      if (s.freight)            { statusEl.textContent = 'Cargo';         statusEl.classList.add('done'); }
-      else if (finalizing)      { statusEl.textContent = preparing ? 'Preparing Cabin' : 'Doors Closing'; statusEl.classList.add('boarding'); }
-      else if (bdSecured && allAboard) { statusEl.textContent = 'Cabin Secured'; statusEl.classList.add('secured'); }
-      else if (allAboard)       { statusEl.textContent = 'Complete';      statusEl.classList.add('done'); }
-      else if (bdTimer)         { statusEl.textContent = 'Boarding';      statusEl.classList.add('boarding'); }
-      else if (s.boarded > 0)   { statusEl.textContent = 'Paused';        statusEl.classList.add('boarding'); }
-      else                      { statusEl.textContent = 'Ready'; }
+      if (finalizing)                  { statusEl.textContent = cargo ? 'Securing Load' : (preparing ? 'Preparing Cabin' : 'Doors Closing'); statusEl.classList.add('boarding'); }
+      else if (bdSecured && allAboard) { statusEl.textContent = cargo ? 'Cargo Secured' : 'Cabin Secured'; statusEl.classList.add('secured'); }
+      else if (allAboard)              { statusEl.textContent = cargo ? 'Loaded'   : 'Complete'; statusEl.classList.add('done'); }
+      else if (bdTimer)                { statusEl.textContent = cargo ? 'Loading'  : 'Boarding'; statusEl.classList.add('boarding'); }
+      else if (s.boarded > 0)          { statusEl.textContent = 'Paused'; statusEl.classList.add('boarding'); }
+      else                             { statusEl.textContent = 'Ready'; }
 
       // counter
-      document.getElementById('bd-boarded').textContent = s.freight ? '0' : s.boarded;
-      document.getElementById('bd-target').textContent  = s.freight ? '0' : s.target;
+      document.getElementById('bd-boarded').textContent = s.boarded;
+      document.getElementById('bd-target').textContent  = s.target;
       const labelEl = document.getElementById('bd-count-label');
-      labelEl.classList.toggle('secured', bdSecured && allAboard && !s.freight);
+      labelEl.classList.toggle('secured', bdSecured && allAboard);
       labelEl.textContent =
-        s.freight    ? 'Cargo flight — no passengers'
-        : (bdSecured && allAboard) ? 'Cabin secured · ready for pushback'
-        : preparing  ? `Preparing cabin — ${remain}s`
-        : finalizing ? `Doors closing — ${remain}s`
-        : 'Passengers boarded';
+        (bdSecured && allAboard) ? (cargo ? 'Cargo secured · ready for pushback' : 'Cabin secured · ready for pushback')
+        : preparing  ? `${cargo ? 'Securing load' : 'Preparing cabin'} — ${remain}s`
+        : finalizing ? `${cargo ? 'Securing load' : 'Doors closing'} — ${remain}s`
+        : cargo ? 'Pallets loaded' : 'Passengers boarded';
 
       document.getElementById('bd-bar-fill').style.width = `${pct}%`;
       document.getElementById('bd-pct').textContent = `${Math.round(pct)}%`;
 
-      // zones (5 boarding groups)
-      const zonesDone = s.freight ? 5 : Math.floor(pct / 20);
-      document.querySelectorAll('#bd-zones .bd-zone').forEach((z, i) => {
-        z.classList.remove('active', 'done');
-        const st = z.querySelector('.bd-zone-state');
-        if (i < zonesDone)        { z.classList.add('done');   st.textContent = 'Boarded'; }
-        else if (i === zonesDone && !allAboard && (bdTimer || s.boarded > 0)) {
-                                    z.classList.add('active'); st.textContent = 'Boarding'; }
-        else                      {                            st.textContent = 'Waiting'; }
-      });
+      // zones (boarding groups) — passengers only
+      document.getElementById('bd-zones').style.display = cargo ? 'none' : '';
+      if (!cargo) {
+        const zonesDone = Math.floor(pct / 20);
+        document.querySelectorAll('#bd-zones .bd-zone').forEach((z, i) => {
+          z.classList.remove('active', 'done');
+          const st = z.querySelector('.bd-zone-state');
+          if (i < zonesDone)        { z.classList.add('done');   st.textContent = 'Boarded'; }
+          else if (i === zonesDone && !allAboard && (bdTimer || s.boarded > 0)) {
+                                      z.classList.add('active'); st.textContent = 'Boarding'; }
+          else                      {                            st.textContent = 'Waiting'; }
+        });
+      }
 
       // controls
-      document.getElementById('bd-start').disabled = s.freight || allAboard;
-      document.getElementById('bd-all').disabled   = s.freight || allAboard;
-      document.getElementById('bd-reset').disabled = s.freight || s.boarded === 0;
+      document.getElementById('bd-start').disabled = allAboard;
+      document.getElementById('bd-all').disabled   = allAboard;
+      document.getElementById('bd-reset').disabled = s.boarded === 0;
       document.getElementById('bd-start').textContent =
-        (!bdTimer && s.boarded > 0 && !allAboard) ? '▶ Resume Boarding' : '▶ Start Boarding';
+        (!bdTimer && s.boarded > 0 && !allAboard)
+          ? (cargo ? '▶ Resume Loading' : '▶ Resume Boarding')
+          : (cargo ? '▶ Start Loading'  : '▶ Start Boarding');
+      document.getElementById('bd-all').textContent = cargo ? '⏭ Load All' : '⏭ Board All';
 
       // load sheet
-      const pax     = s.freight ? 0 : s.boarded;
+      const pax     = cargo ? 0 : s.boarded;
       const paxWt   = pax * PAX_WT;
       const bagWt   = pax * BAG_WT;
-      const payload = paxWt + bagWt + s.cargo;
+      const cargoWt = cargo ? Math.round(s.cargo * (s.target ? s.boarded / s.target : 0)) : s.cargo;
+      const payload = paxWt + bagWt + cargoWt;
       const zfw     = s.oew + payload;
       const fmt = (n) => n.toLocaleString('en-US');
 
@@ -1570,7 +1596,7 @@
       document.getElementById('ls-bag-n').textContent  = pax;
       document.getElementById('ls-pax').textContent    = fmt(paxWt);
       document.getElementById('ls-bag').textContent    = fmt(bagWt);
-      document.getElementById('ls-cargo').textContent  = fmt(s.cargo);
+      document.getElementById('ls-cargo').textContent  = fmt(cargoWt);
       document.getElementById('ls-payload').textContent= fmt(payload);
       document.getElementById('ls-oew').textContent    = fmt(s.oew);
       document.getElementById('ls-zfw').textContent    = fmt(zfw);

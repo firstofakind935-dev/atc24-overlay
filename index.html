@@ -122,6 +122,25 @@
       cursor: not-allowed;
     }
 
+    #cargo-toggle {
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+
+    #cargo-toggle.cargo {
+      border-color: #e3b341;
+      color: #e3b341;
+    }
+
+    #cargo-toggle:hover { border-color: #58a6ff; }
+
     #output-section {
       background-color: #161b22;
       border: 1px solid #30363d;
@@ -580,6 +599,11 @@
       </div>
 
       <div class="field-group">
+        <label>Flight Type</label>
+        <button type="button" id="cargo-toggle">✈ Passenger</button>
+      </div>
+
+      <div class="field-group">
         <label for="dep-region">Departing Region</label>
         <select id="dep-region">
           <option value="">-- Select Region --</option>
@@ -781,6 +805,7 @@
     const flightLevelEl = document.getElementById("flight-level");
     const routeEl = document.getElementById("route");
     const commandOutputEl = document.getElementById("command-output");
+    let isCargo = false;
 
     function getIcao(name) {
       for (const airports of Object.values(AIRPORTS)) {
@@ -838,6 +863,7 @@
         fl:       flightLevel,
         route,
         speeds,
+        cargo:    isCargo,
         command:  allFilled ? buildCommand() : '',
       });
     }
@@ -1021,6 +1047,8 @@
       routeEl.value = "";
       depRunwayEl.value = "";
       arrRunwayEl.value = "";
+      isCargo = false;
+      renderCargoToggle();
       localStorage.removeItem("fp-state");
       updateCommand();
       updateVSpeeds();
@@ -1168,7 +1196,7 @@
       barStatus.classList.remove("show");
       if (barStatusTimer) clearTimeout(barStatusTimer);
     });
-    window.electronAPI?.onCabinSecured?.(() => showBarStatus("Cabin Secured"));
+    window.electronAPI?.onCabinSecured?.((label) => showBarStatus(label || "Cabin Secured"));
 
     function setExpanded(expanded) {
       isExpanded = expanded;
@@ -1180,6 +1208,20 @@
     callsignEl.addEventListener("input",  updateBar);
 
     updateBar();
+
+    // ── Cargo / passenger toggle ──────────────────────────────────────────────
+    const cargoToggle = document.getElementById("cargo-toggle");
+    function renderCargoToggle() {
+      cargoToggle.textContent = isCargo ? "📦 Cargo" : "✈ Passenger";
+      cargoToggle.classList.toggle("cargo", isCargo);
+    }
+    cargoToggle.addEventListener("click", () => {
+      isCargo = !isCargo;
+      renderCargoToggle();
+      saveForm();
+      updateCommand();   // resends dispatch data with the cargo flag
+    });
+    renderCargoToggle();
 
     // ── Persist flight plan across restarts ───────────────────────────────────
     const FP_KEY = 'fp-state';
@@ -1198,6 +1240,7 @@
         route:      routeEl.value,
         depRwy:     depRunwayEl.value,
         arrRwy:     arrRunwayEl.value,
+        cargo:      isCargo,
       }));
     }
 
@@ -1226,6 +1269,8 @@
       routeEl.value          = d.route    || "";
       depRunwayEl.value      = d.depRwy   || "";
       arrRunwayEl.value      = d.arrRwy   || "";
+      isCargo                = !!d.cargo;
+      renderCargoToggle();
       flightRulesEl.value    = d.rules    || "";
       updateFlightRulesForAircraft();
       updateVSpeeds();

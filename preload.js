@@ -11,7 +11,7 @@ try {
     toggleIpad:           ()       => ipcRenderer.send('toggle-ipad'),
     toggleAtc:            ()       => ipcRenderer.send('toggle-atc'),
     sendDispatchData:     (data)   => ipcRenderer.send('dispatch-data', data),
-    onCabinSecured:       (cb)     => ipcRenderer.on('cabin-secured', () => cb()),
+    onCabinSecured:       (cb)     => ipcRenderer.on('cabin-secured', (_e, label) => cb(label)),
   });
 } catch (e) {
   console.error('Failed to expose electronAPI:', e);
