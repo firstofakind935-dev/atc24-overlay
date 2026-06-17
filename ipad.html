@@ -404,6 +404,44 @@
       letter-spacing: 0.02em;
     }
 
+    /* ── SimBrief-style OFP ── */
+    .ofp {
+      font-family: 'Consolas', 'Courier New', monospace;
+      color: #1a1a2e;
+      font-size: 0.74rem;
+      line-height: 1.5;
+      padding: 12px 16px;
+    }
+    .ofp-sec { margin-top: 11px; }
+    .ofp-sec:first-child { margin-top: 0; }
+    .ofp-h {
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: #1a1a2e;
+      border-bottom: 1px solid #1a1a2e;
+      padding-bottom: 2px;
+      margin-bottom: 5px;
+      font-size: 0.7rem;
+    }
+    .ofp-row { display: flex; justify-content: space-between; gap: 12px; }
+    .ofp-row .k { color: #666; }
+    .ofp-row .v { font-weight: 700; text-align: right; word-break: break-word; }
+    .ofp-3 {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 1px 16px;
+    }
+    .ofp-3 .lbl  { color: #666; }
+    .ofp-3 .pln, .ofp-3 .mx { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .ofp-3 .mx   { color: #999; font-weight: 600; }
+    .ofp-3 .colh { color: #999; font-weight: 700; font-size: 0.58rem; text-align: right; letter-spacing: 0.04em; }
+    .ofp-3.ofp-total {
+      border-top: 1px dashed #b0afa8;
+      margin-top: 2px;
+      padding-top: 2px;
+    }
+    .ofp-3.ofp-total .lbl { color: #1a1a2e; font-weight: 800; }
+
     /* Dispatch release */
     .ds-fuel {
       margin-top: 6px;
@@ -895,105 +933,83 @@
           </div>
         </div>
 
-        <div class="ds-block">
-          <div class="ds-grid">
-            <div class="ds-field">
-              <span class="ds-label">Callsign</span>
-              <span class="ds-value mono" id="ds-callsign">—</span>
+        <div class="ofp">
+
+          <div class="ofp-sec">
+            <div class="ofp-row"><span class="k">FLT</span><span class="v" id="ds-callsign">—</span></div>
+            <div class="ofp-row"><span class="k">ACFT</span><span class="v" id="ds-aircraft">—</span></div>
+            <div class="ofp-row"><span class="k">REG</span><span class="v" id="ds-ingame">—</span></div>
+            <div class="ofp-row"><span class="k">RULES</span><span class="v" id="ds-rules">—</span></div>
+          </div>
+
+          <div class="ofp-sec">
+            <div class="ofp-h">[ ROUTE ]</div>
+            <div class="ofp-row"><span class="v" id="ds-dep-icao" style="font-size:1.05rem">—</span><span class="v" id="ds-arr-icao" style="font-size:1.05rem">—</span></div>
+            <div class="ofp-row"><span class="k" id="ds-dep-name">—</span><span class="k" id="ds-arr-name" style="text-align:right">—</span></div>
+            <div class="ofp-row" style="margin-top:5px"><span class="k">CRZ</span><span class="v" id="ds-fl">—</span></div>
+            <div class="ofp-row"><span class="k">RTE</span><span class="v" id="ds-route">—</span></div>
+          </div>
+
+          <div class="ofp-sec">
+            <div class="ofp-h">[ WEIGHTS / KG ]</div>
+            <div class="ofp-3">
+              <span class="lbl"></span><span class="colh">PLAN</span><span class="colh">MAX</span>
+              <span class="lbl">OPERATING EMPTY</span><span class="pln" id="w-oew">—</span><span class="mx"></span>
+              <span class="lbl" id="w-paxline">PASSENGERS</span><span class="pln" id="w-pax">—</span><span class="mx"></span>
+              <span class="lbl">CARGO</span><span class="pln" id="w-cargo">—</span><span class="mx"></span>
+              <span class="lbl">PAYLOAD</span><span class="pln" id="w-payload">—</span><span class="mx"></span>
             </div>
-            <div class="ds-field">
-              <span class="ds-label">Tail Number</span>
-              <span class="ds-value" id="ds-ingame">—</span>
+            <div class="ofp-3 ofp-total"><span class="lbl">ZERO FUEL WT</span><span class="pln" id="w-zfw">—</span><span class="mx" id="w-mzfw">—</span></div>
+            <div class="ofp-3"><span class="lbl">TAKEOFF FUEL</span><span class="pln" id="w-tof">—</span><span class="mx"></span></div>
+            <div class="ofp-3 ofp-total"><span class="lbl">TAKEOFF WT</span><span class="pln" id="w-tow">—</span><span class="mx" id="w-mtow">—</span></div>
+            <div class="ofp-3 ofp-total"><span class="lbl">LANDING WT</span><span class="pln" id="w-ldw">—</span><span class="mx" id="w-mlw">—</span></div>
+          </div>
+
+          <div class="ofp-sec">
+            <div class="ofp-h">[ FUEL ]</div>
+            <div class="ofp-3">
+              <span class="lbl"></span><span class="colh">TIME</span><span class="colh">KG</span>
+              <span class="lbl">TRIP</span><span class="pln" id="f-trip-t">—</span><span class="pln" id="f-trip">—</span>
+              <span class="lbl">CONTINGENCY</span><span class="pln" id="f-cont-t">—</span><span class="pln" id="f-cont">—</span>
+              <span class="lbl">ALTERNATE</span><span class="pln" id="f-altn-t">—</span><span class="pln" id="f-altn">—</span>
+              <span class="lbl">FINAL RESERVE</span><span class="pln" id="f-res-t">—</span><span class="pln" id="f-res">—</span>
             </div>
-            <div class="ds-field">
-              <span class="ds-label">Aircraft Type</span>
-              <span class="ds-value mono" id="ds-aircraft">—</span>
-            </div>
-            <div class="ds-field">
-              <span class="ds-label">Flight Rules</span>
-              <span class="ds-value mono" id="ds-rules">—</span>
+            <div class="ofp-3 ofp-total"><span class="lbl">BLOCK</span><span class="pln" id="f-block-t">—</span><span class="pln" id="f-block">—</span></div>
+          </div>
+
+          <div class="ofp-sec">
+            <div class="ofp-h">[ PERFORMANCE — V-SPEEDS / KT ]</div>
+            <div class="ds-speeds">
+              <div class="ds-speed"><div class="sp-name">V1</div><div class="sp-val" id="ds-v1">—</div></div>
+              <div class="ds-speed"><div class="sp-name">VR</div><div class="sp-val" id="ds-vr">—</div></div>
+              <div class="ds-speed"><div class="sp-name">V2</div><div class="sp-val" id="ds-v2">—</div></div>
+              <div class="ds-speed"><div class="sp-name">VREF</div><div class="sp-val" id="ds-vref">—</div></div>
+              <div class="ds-speed"><div class="sp-name">VAPP</div><div class="sp-val" id="ds-vapp">—</div></div>
             </div>
           </div>
-        </div>
 
-        <div class="ds-divider"></div>
-
-        <div class="ds-route">
-          <div class="ds-airport-block">
-            <div class="ds-ap-role">Origin</div>
-            <div class="ds-ap-icao" id="ds-dep-icao">—</div>
-            <div class="ds-ap-name" id="ds-dep-name">—</div>
+          <div class="ofp-sec">
+            <div class="ofp-h">[ ATC FLIGHT PLAN ]</div>
+            <div class="ds-fpl" id="ds-fpl">—</div>
           </div>
-          <div class="ds-arrow">→</div>
-          <div class="ds-airport-block dest">
-            <div class="ds-ap-role">Destination</div>
-            <div class="ds-ap-icao" id="ds-arr-icao">—</div>
-            <div class="ds-ap-name" id="ds-arr-name">—</div>
+
+          <div class="ofp-sec">
+            <div class="ofp-h">[ ATC24 COMMAND ]</div>
+            <div class="ds-cmd-text" id="ds-command" style="color:#0a7d33;margin-top:4px">—</div>
           </div>
-        </div>
 
-        <div class="ds-divider"></div>
-
-        <div class="ds-block">
-          <div class="ds-grid">
-            <div class="ds-field">
-              <span class="ds-label">Cruise Level</span>
-              <span class="ds-value mono" id="ds-fl">—</span>
-            </div>
-            <div class="ds-field">
-              <span class="ds-label">Route</span>
-              <span class="ds-value mono" id="ds-route">—</span>
+          <div class="ofp-sec">
+            <div class="ofp-h">[ DISPATCH RELEASE ]</div>
+            <p class="ds-release-text" style="margin-top:4px">
+              PLANNED AND RELEASED IAW COMPANY OPS SPECS. WX REPORTS/FORECASTS OK ALONG ROUTE.
+              AIRCRAFT AIRWORTHY — NO MEL/CDL ITEMS OUTSTANDING.
+            </p>
+            <div class="ds-signs">
+              <div class="ds-sign"><div class="sig" id="sig-dispatch">ATC24 Dispatch</div><div class="sig-label">Dispatcher</div></div>
+              <div class="ds-sign"><div class="sig" id="sig-pic">—</div><div class="sig-label">Pilot in Command</div></div>
             </div>
           </div>
-        </div>
 
-        <div class="ds-block">
-          <span class="ds-label">Performance — V-Speeds (kt)</span>
-          <div class="ds-speeds">
-            <div class="ds-speed"><div class="sp-name">V1</div><div class="sp-val" id="ds-v1">—</div></div>
-            <div class="ds-speed"><div class="sp-name">VR</div><div class="sp-val" id="ds-vr">—</div></div>
-            <div class="ds-speed"><div class="sp-name">V2</div><div class="sp-val" id="ds-v2">—</div></div>
-            <div class="ds-speed"><div class="sp-name">Vref</div><div class="sp-val" id="ds-vref">—</div></div>
-            <div class="ds-speed"><div class="sp-name">Vapp</div><div class="sp-val" id="ds-vapp">—</div></div>
-          </div>
-        </div>
-
-        <div class="ds-block">
-          <span class="ds-label">ICAO Flight Plan — Filed</span>
-          <div class="ds-fpl" id="ds-fpl">—</div>
-        </div>
-
-        <div class="ds-block">
-          <span class="ds-label">Dispatch Release — Fuel (kg)</span>
-          <div class="ds-fuel">
-            <div class="fuel-row head"><span>Item</span><span>Fuel</span></div>
-            <div class="fuel-row"><span>TRIP</span><span id="fu-trip">—</span></div>
-            <div class="fuel-row"><span>CONTINGENCY 10%</span><span id="fu-cont">—</span></div>
-            <div class="fuel-row"><span>ALTERNATE</span><span id="fu-altn">—</span></div>
-            <div class="fuel-row"><span>FINAL RESERVE</span><span id="fu-res">—</span></div>
-            <div class="fuel-row total"><span>BLOCK FUEL</span><span id="fu-block">—</span></div>
-          </div>
-          <p class="ds-release-text">
-            DISPATCH RELEASE — I HEREBY AUTHORIZE THIS FLIGHT. THE FLIGHT HAS BEEN PLANNED AND
-            RELEASED IN ACCORDANCE WITH COMPANY OPERATIONS SPECIFICATIONS. WEATHER REPORTS AND
-            FORECASTS INDICATE THE FLIGHT CAN BE CONDUCTED SAFELY ALONG THE FILED ROUTE.
-            AIRCRAFT IS AIRWORTHY — NO MEL/CDL ITEMS OUTSTANDING.
-          </p>
-          <div class="ds-signs">
-            <div class="ds-sign">
-              <div class="sig" id="sig-dispatch">ATC24 Dispatch</div>
-              <div class="sig-label">Dispatcher</div>
-            </div>
-            <div class="ds-sign">
-              <div class="sig" id="sig-pic">—</div>
-              <div class="sig-label">Pilot in Command</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-cmd">
-          <div class="ds-label">ATC24 Command</div>
-          <div class="ds-cmd-text" id="ds-command">—</div>
         </div>
       </div>
     </div>
@@ -1308,13 +1324,58 @@
 
       document.getElementById('ds-fpl').textContent = buildFpl(d) || '—';
 
+      // Sync boarding state to this flight, then pull planned weights from it
+      bdOnFlight(d);
+      const bs = bdState;
       const fu = estimateFuel(d);
-      const fmt = (n) => n ? n.toLocaleString('en-US') : '—';
-      document.getElementById('fu-trip').textContent  = fu ? fmt(fu.trip)  : '—';
-      document.getElementById('fu-cont').textContent  = fu ? fmt(fu.cont)  : '—';
-      document.getElementById('fu-altn').textContent  = fu ? fmt(fu.altn)  : '—';
-      document.getElementById('fu-res').textContent   = fu ? fmt(fu.res)   : '—';
-      document.getElementById('fu-block').textContent = fu ? fmt(fu.block) : '—';
+      const fmt  = (n) => (n || n === 0) ? Math.round(n).toLocaleString('en-US') : '—';
+      const hhmm = (m) => `${String(Math.floor(m / 60)).padStart(2,'0')}:${String(Math.round(m % 60)).padStart(2,'0')}`;
+      const ac   = (d.aircraft || '').toUpperCase();
+      const burn = FPL_SUPERS.includes(ac) ? 180 : FPL_HEAVIES.includes(ac) ? 110 : FPL_PROPS.includes(ac) ? 25 : 45;
+      const PW   = PAX_WT + BAG_WT;
+      const wIds = ['w-oew','w-pax','w-cargo','w-payload','w-zfw','w-mzfw','w-tof','w-tow','w-mtow','w-ldw'];
+      const fIds = ['f-trip','f-cont','f-altn','f-res','f-block','f-trip-t','f-cont-t','f-altn-t','f-res-t','f-block-t'];
+
+      if (bs && fu) {
+        const paxN    = bs.freight ? 0 : bs.target;
+        const paxWt   = paxN * PW;
+        const cargo   = bs.cargo;
+        const payload = paxWt + cargo;
+        const oew     = bs.oew;
+        const zfw     = oew + payload;
+        const taxi    = Math.round(fu.block * 0.03);
+        const tof     = fu.block - taxi;          // takeoff fuel
+        const tow     = zfw + tof;
+        const ldw     = tow - fu.trip;
+
+        document.getElementById('w-paxline').textContent = bs.freight ? 'PAYLOAD (FREIGHT)' : `PASSENGERS ${paxN} x ${PW}`;
+        document.getElementById('w-oew').textContent     = fmt(oew);
+        document.getElementById('w-pax').textContent     = fmt(paxWt);
+        document.getElementById('w-cargo').textContent   = fmt(cargo);
+        document.getElementById('w-payload').textContent = fmt(payload);
+        document.getElementById('w-zfw').textContent     = fmt(zfw);
+        document.getElementById('w-mzfw').textContent    = fmt(oew * 1.4);
+        document.getElementById('w-tof').textContent     = fmt(tof);
+        document.getElementById('w-tow').textContent     = fmt(tow);
+        document.getElementById('w-mtow').textContent    = fmt(oew * 1.95);
+        document.getElementById('w-ldw').textContent     = fmt(ldw);
+        document.getElementById('w-mlw').textContent     = fmt(oew * 1.55);
+
+        document.getElementById('f-trip').textContent    = fmt(fu.trip);
+        document.getElementById('f-cont').textContent    = fmt(fu.cont);
+        document.getElementById('f-altn').textContent    = fmt(fu.altn);
+        document.getElementById('f-res').textContent     = fmt(fu.res);
+        document.getElementById('f-block').textContent   = fmt(fu.block);
+        document.getElementById('f-trip-t').textContent  = hhmm(fu.trip  / burn);
+        document.getElementById('f-cont-t').textContent  = hhmm(fu.cont  / burn);
+        document.getElementById('f-altn-t').textContent  = hhmm(fu.altn  / burn);
+        document.getElementById('f-res-t').textContent   = hhmm(fu.res   / burn);
+        document.getElementById('f-block-t').textContent = hhmm(fu.block / burn);
+      } else {
+        wIds.forEach(id => { document.getElementById(id).textContent = '—'; });
+        fIds.forEach(id => { document.getElementById(id).textContent = '—'; });
+        document.getElementById('w-paxline').textContent = 'PASSENGERS';
+      }
 
       document.getElementById('sig-pic').textContent = d.ingame || d.callsign || '—';
 
@@ -1327,8 +1388,6 @@
       const hasData = d.callsign || d.depName || d.arrName;
       document.getElementById('dispatch-placeholder').style.display = hasData ? 'none' : 'flex';
       document.getElementById('dispatch-sheet').style.display = hasData ? 'block' : 'none';
-
-      bdOnFlight(d);
     }
 
     window.ipadAPI?.onDispatchData(renderDispatch);
