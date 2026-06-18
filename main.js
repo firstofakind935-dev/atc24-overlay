@@ -340,6 +340,17 @@ ipcMain.handle('fetch-atis', async () => {
   }
 });
 
+// Live staffed ATC positions
+ipcMain.handle('fetch-controllers', async () => {
+  try {
+    const res = await fetch('https://24data.ptfs.app/controllers', { headers: { accept: 'application/json' } });
+    if (!res.ok) return { error: 'HTTP ' + res.status };
+    return await res.json();
+  } catch (e) {
+    return { error: String(e) };
+  }
+});
+
 ipcMain.on('show-ipad', () => {
   if (ipadWin && !ipadWin.isVisible()) ipadWin.show();
 });
