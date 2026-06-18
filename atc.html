@@ -250,6 +250,7 @@
     .on-pos.GND { color: #3fb950; border: 1px solid #3fb950; }
     .on-pos.APP, .on-pos.DEP, .on-pos.DEL { color: #e3b341; border: 1px solid #e3b341; }
     .on-apt  { font-size: 0.9rem; font-weight: 800; color: #e6edf3; letter-spacing: 0.04em; min-width: 48px; }
+    .on-freq { font-family: 'Consolas', monospace; font-size: 0.82rem; font-weight: 700; color: #3fb950; min-width: 62px; }
     .on-who  { font-size: 0.74rem; color: #c9d1d9; flex: 1; word-break: break-word; }
     .on-q    { font-size: 0.64rem; color: #8b949e; white-space: nowrap; }
   </style>
@@ -308,7 +309,7 @@
     </div>
     <div id="atis-row">
       <button id="atis-btn">📢 Broadcast ATIS</button>
-      <span style="font-size:0.68rem;color:#8b949e">Generates the ATIS line into the log below.</span>
+      <span id="cfg-freq" style="font-size:0.78rem;color:#3fb950;font-family:'Consolas',monospace;font-weight:700;margin-left:auto"></span>
     </div>
   </div>
 
@@ -382,6 +383,25 @@
 
     const DONE_STATUSES = new Set(['Departed', 'Arrived', 'Handed Off']);
 
+    // ATC24 frequencies (MHz). CTR keyed by both main ICAO and center-sector code.
+    const FREQ = {
+      'IRFD CTR':'124.850','IRCC CTR':'124.850','IRFD TWR':'118.100','IRFD GND':'120.400',
+      'IMLR TWR':'133.850','IGAR TWR':'125.600','IBLT TWR':'120.250','ITRC TWR':'119.150',
+      'CYPRUS CTR':'126.300','ICCC CTR':'126.300','ILAR TWR':'121.200','ILAR GND':'119.400',
+      'IPAP TWR':'119.900','IIAB TWR':'127.250','IHEN TWR':'130.250','IBAR TWR':'118.750',
+      'IZOL CTR':'125.650','IZCC CTR':'125.650','IZOL TWR':'118.700','IZOL GND':'121.900',
+      'IJAF TWR':'119.100','ISCM TWR':'121.300',
+      'ORENJI CTR':'132.300','IOCC CTR':'132.300','ITKO TWR':'118.800','ITKO GND':'118.225',
+      'IDCS TWR':'118.250','IBRD TWR':'118.350',
+      'PERTH CTR':'135.250','IPCC CTR':'135.250','IPPH TWR':'127.400','IPPH GND':'121.700','ILKL TWR':'120.150',
+      'IBTH CTR':'128.600','IBCC CTR':'128.600','IBTH TWR':'118.700','ISKP TWR':'123.250',
+      'GRINDAVIK CTR':'126.750','IGCC CTR':'126.750','IKFL TWR':'118.300','IKFL GND':'121.750','ITEY TWR':'119.425',
+      'SAUTH CTR':'127.825','ISCC CTR':'127.825','ISAU TWR':'118.200',
+    };
+    function freqFor(airport, position) {
+      return FREQ[`${(airport||'').toUpperCase()} ${(position||'').toUpperCase()}`] || null;
+    }
+
     let strips = [];
     try { strips = JSON.parse(localStorage.getItem('atc-strips') || '[]'); } catch {}
     let log = [];
@@ -418,8 +438,13 @@
       };
     }
     function saveCfg() { localStorage.setItem('atc-cfg', JSON.stringify(getCfg())); }
-    Object.values(cfgEls).forEach(el => el.addEventListener('input', saveCfg));
-    cfgEls.pos.addEventListener('change', renderStrips);
+    function updateCfgFreq() {
+      const c = getCfg();
+      const f = freqFor(c.apt, c.pos);
+      document.getElementById('cfg-freq').textContent = f ? `📻 ${f}` : '';
+    }
+    Object.values(cfgEls).forEach(el => el.addEventListener('input', () => { saveCfg(); updateCfgFreq(); }));
+    cfgEls.pos.addEventListener('change', () => { renderStrips(); updateCfgFreq(); });
 
     function saveStrips() { localStorage.setItem('atc-strips', JSON.stringify(strips)); }
     function saveLog()    { localStorage.setItem('atc-log', JSON.stringify(log.slice(-40))); }
@@ -656,9 +681,11 @@
           `<div class="on-group">${staffed.length} position${staffed.length > 1 ? 's' : ''} online</div>` +
           staffed.map(c => {
             const q = c.queue && c.queue.length ? `${c.queue.length} in queue` : '';
+            const f = freqFor(c.airport, c.position);
             return `<div class="on-card" data-apt="${c.airport}">
               <span class="on-pos ${c.position}">${c.position}</span>
               <span class="on-apt">${c.airport}</span>
+              <span class="on-freq">${f || '—'}</span>
               <span class="on-who">${escapeHtml(c.holder)}</span>
               <span class="on-q">${q}</span>
             </div>`;
@@ -672,6 +699,7 @@
     document.getElementById('on-filter').addEventListener('input', onFilterApply);
 
     loadCfg();
+    updateCfgFreq();
     renderStrips();
     renderLog();
   </script>
