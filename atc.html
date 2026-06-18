@@ -300,8 +300,8 @@
       <input type="text" id="cfg-wind" placeholder="270/08" />
     </div>
     <div class="cfg-field">
-      <label for="cfg-qnh">QNH</label>
-      <input type="text" id="cfg-qnh" placeholder="1013" />
+      <label for="cfg-qnh">QNH / ALT</label>
+      <input type="text" id="cfg-qnh" placeholder="1013 or 29.92" />
     </div>
     <div class="cfg-field">
       <label for="cfg-atis">ATIS</label>
@@ -359,9 +359,9 @@
     // pos = positions that may issue this · rwy = which active runway it uses ('dep'/'arr')
     const INSTRUCTIONS = [
       { id: 'clearance', label: 'IFR Clearance',   status: 'Cleared',   pos: ['Ground'],           rwy: null,  build: (cs, s, c) => `${cs}, cleared to ${s.arr || 'destination'} as filed, squawk ${s.squawk}.` },
-      { id: 'startup',   label: 'Startup',         status: 'Startup',   pos: ['Ground'],           rwy: null,  build: (cs, s, c) => `${cs}, startup approved, information ${c.atis || 'current'}, QNH ${c.qnh || 'standard'}.` },
+      { id: 'startup',   label: 'Startup',         status: 'Startup',   pos: ['Ground'],           rwy: null,  build: (cs, s, c) => `${cs}, startup approved, information ${c.atis || 'current'}, ${altSetting(c.qnh)}.` },
       { id: 'pushback',  label: 'Pushback',        status: 'Pushback',  pos: ['Ground'],           rwy: null,  build: (cs, s, c) => `${cs}, pushback approved.` },
-      { id: 'taxi',      label: 'Taxi to RWY',     status: 'Taxiing',   pos: ['Ground'],           rwy: 'dep', build: (cs, s, c) => `${cs}, taxi to holding point runway ${c.depRwy || 'in use'}, QNH ${c.qnh || 'standard'}.` },
+      { id: 'taxi',      label: 'Taxi to RWY',     status: 'Taxiing',   pos: ['Ground'],           rwy: 'dep', build: (cs, s, c) => `${cs}, taxi to holding point runway ${c.depRwy || 'in use'}, ${altSetting(c.qnh)}.` },
       { id: 'taxiGate',  label: 'Taxi to Stand',   status: 'Arrived',   pos: ['Ground'],           rwy: null,  build: (cs, s, c) => `${cs}, taxi to stand, welcome to ${c.apt || 'the field'}.` },
       { id: 'lineup',    label: 'Line Up & Wait',  status: 'Lining Up', pos: ['Tower'],            rwy: 'dep', build: (cs, s, c) => `${cs}, runway ${c.depRwy || 'in use'}, line up and wait.` },
       { id: 'takeoff',   label: 'Cleared Takeoff', status: 'Departing', pos: ['Tower'],            rwy: 'dep', build: (cs, s, c) => `${cs}, runway ${c.depRwy || 'in use'}, wind ${c.wind || 'calm'}, cleared for takeoff.` },
@@ -400,6 +400,16 @@
     };
     function freqFor(airport, position) {
       return FREQ[`${(airport||'').toUpperCase()} ${(position||'').toUpperCase()}`] || null;
+    }
+
+    // Pressure phrasing: hPa → "QNH 1013", inHg → "altimeter 29.92"
+    function altSetting(v) {
+      v = (v || '').toString().trim();
+      if (!v) return 'QNH standard';
+      if (v.includes('.')) return `altimeter ${v}`;                 // 29.92
+      const n = parseInt(v, 10);
+      if (n >= 2800 && n <= 3200) return `altimeter ${(n / 100).toFixed(2)}`; // 2992
+      return `QNH ${v}`;                                            // 1013 / 998
     }
 
     let strips = [];
@@ -567,7 +577,7 @@
     // ATIS broadcast
     document.getElementById('atis-btn').addEventListener('click', () => {
       const c = getCfg();
-      const text = `${c.apt || 'Field'} information ${c.atis || 'A'}, departure runway ${c.depRwy || 'in use'}, arrival runway ${c.arrRwy || 'in use'}, wind ${c.wind || 'calm'}, QNH ${c.qnh || 'standard'}.`;
+      const text = `${c.apt || 'Field'} information ${c.atis || 'A'}, departure runway ${c.depRwy || 'in use'}, arrival runway ${c.arrRwy || 'in use'}, wind ${c.wind || 'calm'}, ${altSetting(c.qnh)}.`;
       addLog(text, true);
       copyToClipboard(text);
     });
@@ -599,7 +609,8 @@
 
     function parseAtis(content) {
       const wind = (content.match(/(\d{3}\/\d{1,2})/) || [])[1] || '';
-      const qnh  = (content.match(/Q(\d{3,4})/) || [])[1] || '';
+      const mQ = content.match(/Q(\d{3,4})/), mA = content.match(/\bA(\d{4})\b/);
+      const qnh = mQ ? mQ[1] : (mA ? (parseInt(mA[1], 10) / 100).toFixed(2) : '');
       const dep  = ((content.match(/DEP RWY ([0-9LRC ]+?)\s+ARR/) || [])[1] || '').trim();
       const arr  = ((content.match(/ARR RWY ([0-9LRC ]+)/) || [])[1] || '').trim();
       return { wind, qnh, dep, arr };
