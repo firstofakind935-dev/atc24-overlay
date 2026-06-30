@@ -6,7 +6,8 @@
   "author": "Cmaci",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win --x64"
+    "dist": "electron-builder --win --x64",
+    "test": "node test/perf.test.js"
   },
   "build": {
     "appId": "com.cmaci.atc24overlay",
@@ -16,6 +17,7 @@
       "index.html",
       "main.js",
       "preload.js",
+      "perf.js",
       "icon.png"
     ],
     "win": {
