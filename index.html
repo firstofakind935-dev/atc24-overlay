@@ -877,8 +877,8 @@
         fl:       flightLevel,
         route,
         speeds,
-        depRwy:   depRunwayEl.value.trim(),
-        arrRwy:   arrRunwayEl.value.trim(),
+        depRwy:   (document.getElementById("dep-runway")?.value || "").trim(),
+        arrRwy:   (document.getElementById("arr-runway")?.value || "").trim(),
         cargo:    isCargo,
         command:  allFilled ? buildCommand() : '',
       });
