@@ -1294,6 +1294,7 @@
   </div><!-- /screen -->
   </div><!-- /bezel -->
 
+  <script src="perf.js"></script>
   <script>
     // ── Status bar clock ─────────────────────────────────────────────────────
     const SB_DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1456,6 +1457,7 @@
       const wIds = ['w-oew','w-pax','w-cargo','w-payload','w-zfw','w-mzfw','w-tof','w-tow','w-mtow','w-ldw'];
       const fIds = ['f-trip','f-cont','f-altn','f-res','f-block','f-trip-t','f-cont-t','f-altn-t','f-res-t','f-block-t'];
 
+      let perfWeights = null;
       if (bs && fu) {
         const paxN    = bs.freight ? 0 : bs.target;
         const paxWt   = paxN * PW;
@@ -1467,6 +1469,9 @@
         const tof     = fu.block - taxi;          // takeoff fuel
         const tow     = zfw + tof;
         const ldw     = tow - fu.trip;
+        const mtow    = oew * 1.95;
+        const mlw     = oew * 1.55;
+        perfWeights = { tow, ldw, mtow, mlw };
 
         document.getElementById('w-paxline').textContent = bs.freight ? 'PAYLOAD (FREIGHT)' : `PASSENGERS ${paxN} x ${PW}`;
         document.getElementById('w-oew').textContent     = fmt(oew);
@@ -1477,9 +1482,9 @@
         document.getElementById('w-mzfw').textContent    = fmt(oew * 1.4);
         document.getElementById('w-tof').textContent     = fmt(tof);
         document.getElementById('w-tow').textContent     = fmt(tow);
-        document.getElementById('w-mtow').textContent    = fmt(oew * 1.95);
+        document.getElementById('w-mtow').textContent    = fmt(mtow);
         document.getElementById('w-ldw').textContent     = fmt(ldw);
-        document.getElementById('w-mlw').textContent     = fmt(oew * 1.55);
+        document.getElementById('w-mlw').textContent     = fmt(mlw);
 
         document.getElementById('f-trip').textContent    = fmt(fu.trip);
         document.getElementById('f-cont').textContent    = fmt(fu.cont);
@@ -1497,6 +1502,10 @@
         document.getElementById('w-paxline').textContent = 'PASSENGERS';
       }
 
+      const perf = window.PerfModel ? window.PerfModel.computePerf(d, perfWeights) : null;
+      renderPerfDispatch(perf);
+      renderPerfTab(d, perf, perfWeights);
+
       document.getElementById('sig-pic').textContent = d.ingame || d.callsign || '—';
 
       const airline = resolveAirline(d.callsign) || resolveAirline(d.ingame);
@@ -1508,6 +1517,42 @@
       const hasData = d.callsign || d.depName || d.arrName;
       document.getElementById('dispatch-placeholder').style.display = hasData ? 'none' : 'flex';
       document.getElementById('dispatch-sheet').style.display = hasData ? 'block' : 'none';
+    }
+
+    // Fill the [ FLAPS & THRUST ] block on the dispatch OFP
+    function renderPerfDispatch(perf) {
+      const f = (v) => (v || v === 0) ? v : '—';
+      const n = (perf && perf.n1) || {};
+      document.getElementById('dsp-toflap').textContent  = perf ? perf.toFlap  : '—';
+      document.getElementById('dsp-ldgflap').textContent = perf ? perf.ldgFlap : '—';
+      document.getElementById('dsp-n1-to').textContent   = f(n.to);
+      document.getElementById('dsp-n1-clb').textContent  = f(n.clb);
+      document.getElementById('dsp-n1-crz').textContent  = f(n.crz);
+      document.getElementById('dsp-n1-des').textContent  = f(n.des);
+      document.getElementById('dsp-n1-ldg').textContent  = f(n.ldg);
+    }
+
+    // Fill the dedicated Perf tab
+    function renderPerfTab(d, perf, weights) {
+      const ph   = document.getElementById('perf-placeholder');
+      const body = document.getElementById('perf-body');
+      if (!perf) { ph.style.display = 'flex'; body.style.display = 'none'; return; }
+      ph.style.display = 'none'; body.style.display = 'block';
+
+      document.getElementById('perf-toflap').textContent  = perf.toFlap;
+      document.getElementById('perf-ldgflap').textContent = perf.ldgFlap;
+      document.getElementById('perf-n1-to').textContent   = `${perf.n1.to}% N1`;
+      document.getElementById('perf-n1-clb').textContent  = `${perf.n1.clb}% N1`;
+      document.getElementById('perf-n1-crz').textContent  = `${perf.n1.crz}% N1`;
+      document.getElementById('perf-n1-des').textContent  = `${perf.n1.des}% N1`;
+      document.getElementById('perf-n1-ldg').textContent  = `${perf.n1.ldg}% N1`;
+
+      const parts = [];
+      if (weights && weights.tow) parts.push(`TOW ${Math.round(weights.tow).toLocaleString('en-US')} kg`);
+      const rwy = ((d && d.depRwy) || '').trim();
+      if (rwy) parts.push(`RWY ${rwy.toUpperCase()}`);
+      if (d && d.fl) parts.push(`FL${d.fl}`);
+      document.getElementById('perf-basis').textContent = parts.length ? `Based on ${parts.join(' · ')}` : '';
     }
 
     window.ipadAPI?.onDispatchData(renderDispatch);
