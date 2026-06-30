@@ -115,8 +115,13 @@ function createFlightEyeLargeWindow() {
 // ─── iPad popup ───────────────────────────────────────────────────────────────
 function createIpadWindow() {
   const { width } = screen.getPrimaryDisplay().workAreaSize;
-  const def = { width: 680, height: 520, x: Math.round(width / 2 - 340), y: 60 };
+  const def = { width: 620, height: 480, x: Math.round(width / 2 - 310), y: 60 };
   const b = getBounds('ipad', def);
+
+  // Cap the iPad size — it's a tablet panel, not a full-screen map — so a stale or
+  // oversized saved bound can't make it open huge. Heals on the next move/resize.
+  b.width  = Math.max(360, Math.min(b.width  || def.width,  820));
+  b.height = Math.max(300, Math.min(b.height || def.height, 640));
 
   ipadWin = new BrowserWindow({
     width: b.width, height: b.height, x: b.x, y: b.y,
