@@ -894,6 +894,69 @@
     /* Cabin-secured state — blue */
     .bd-status.secured { color: #58a6ff; border-color: #58a6ff; }
     .bd-count-label.secured { color: #58a6ff; font-weight: 700; }
+
+    /* ════════════════════════════════════
+       PERF PANEL
+    ════════════════════════════════════ */
+    #panel-perf {
+      overflow-y: auto;
+      background: #0d1117;
+      padding: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+    }
+    #panel-perf::-webkit-scrollbar { width: 4px; }
+    #panel-perf::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
+
+    #perf-placeholder {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #8b949e;
+      text-align: center;
+    }
+    #perf-placeholder .ph-icon { font-size: 2.5rem; }
+    #perf-placeholder p { font-size: 0.82rem; line-height: 1.5; max-width: 260px; }
+
+    #perf-body { display: none; }
+
+    .perf-flaps { display: flex; gap: 8px; margin-bottom: 14px; }
+    .perf-flap-card {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      background: #161b22;
+    }
+    .perf-flap-card .lbl {
+      font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: #8b949e;
+    }
+    .perf-flap-card .val {
+      font-size: 1.6rem; font-weight: 900; color: #3fb950; line-height: 1.1; margin-top: 2px;
+    }
+
+    .perf-sched { border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+    .perf-sched-title {
+      background: #161b22; padding: 7px 12px;
+      font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #58a6ff; font-weight: 700; border-bottom: 1px solid #30363d;
+    }
+    .perf-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 12px; font-size: 0.82rem; color: #e6edf3;
+      border-bottom: 1px solid #161b22;
+    }
+    .perf-row:last-child { border-bottom: none; }
+    .perf-row .ph { color: #8b949e; }
+    .perf-row .n1 {
+      font-family: 'Consolas', monospace; font-weight: 700; color: #e6edf3;
+      font-variant-numeric: tabular-nums;
+    }
+    .perf-basis { margin-top: 12px; font-size: 0.68rem; color: #8b949e; text-align: center; }
   </style>
 </head>
 <body>
@@ -922,6 +985,7 @@
   <!-- ── Tab bar ── -->
   <div id="ipad-tabbar">
     <div class="ipad-tab active" data-tab="dispatch">📄 Dispatch</div>
+    <div class="ipad-tab"        data-tab="perf">⚙ Perf</div>
     <div class="ipad-tab"        data-tab="boarding">🧳 Boarding</div>
     <div class="ipad-tab"        data-tab="checklist">✅ Checklist</div>
     <div class="ipad-tab"        data-tab="pad">✏ Pad</div>
@@ -1009,6 +1073,19 @@
           </div>
 
           <div class="ofp-sec">
+            <div class="ofp-h">[ FLAPS &amp; THRUST ]</div>
+            <div class="ofp-row"><span class="k">T/O FLAPS</span><span class="v" id="dsp-toflap">—</span></div>
+            <div class="ofp-row"><span class="k">LDG FLAPS</span><span class="v" id="dsp-ldgflap">—</span></div>
+            <div class="ds-speeds" style="margin-top:7px">
+              <div class="ds-speed"><div class="sp-name">T/O</div><div class="sp-val" id="dsp-n1-to">—</div></div>
+              <div class="ds-speed"><div class="sp-name">CLB</div><div class="sp-val" id="dsp-n1-clb">—</div></div>
+              <div class="ds-speed"><div class="sp-name">CRZ</div><div class="sp-val" id="dsp-n1-crz">—</div></div>
+              <div class="ds-speed"><div class="sp-name">DES</div><div class="sp-val" id="dsp-n1-des">—</div></div>
+              <div class="ds-speed"><div class="sp-name">LDG</div><div class="sp-val" id="dsp-n1-ldg">—</div></div>
+            </div>
+          </div>
+
+          <div class="ofp-sec">
             <div class="ofp-h">[ ATC FLIGHT PLAN ]</div>
             <div class="ds-fpl" id="ds-fpl">—</div>
           </div>
@@ -1031,6 +1108,29 @@
           </div>
 
         </div>
+      </div>
+    </div>
+
+    <!-- PERF -->
+    <div class="panel" id="panel-perf">
+      <div id="perf-placeholder">
+        <div class="ph-icon">⚙</div>
+        <p>Select an aircraft in the flight plan generator to compute flap &amp; thrust settings.</p>
+      </div>
+      <div id="perf-body">
+        <div class="perf-flaps">
+          <div class="perf-flap-card"><div class="lbl">T/O Flaps</div><div class="val">FLAPS <span id="perf-toflap">—</span></div></div>
+          <div class="perf-flap-card"><div class="lbl">LDG Flaps</div><div class="val">FLAPS <span id="perf-ldgflap">—</span></div></div>
+        </div>
+        <div class="perf-sched">
+          <div class="perf-sched-title">Thrust Schedule — N1</div>
+          <div class="perf-row"><span class="ph">🛫 Takeoff</span><span class="n1" id="perf-n1-to">—</span></div>
+          <div class="perf-row"><span class="ph">⬆ Climb</span><span class="n1" id="perf-n1-clb">—</span></div>
+          <div class="perf-row"><span class="ph">✈ Cruise</span><span class="n1" id="perf-n1-crz">—</span></div>
+          <div class="perf-row"><span class="ph">⬇ Descent</span><span class="n1" id="perf-n1-des">—</span></div>
+          <div class="perf-row"><span class="ph">🛬 Landing</span><span class="n1" id="perf-n1-ldg">—</span></div>
+        </div>
+        <div class="perf-basis" id="perf-basis"></div>
       </div>
     </div>
 
