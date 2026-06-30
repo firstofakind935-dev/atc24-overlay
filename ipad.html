@@ -1548,7 +1548,7 @@
       document.getElementById('perf-n1-ldg').textContent  = `${perf.n1.ldg}% N1`;
 
       const parts = [];
-      if (weights && weights.tow) parts.push(`TOW ${Math.round(weights.tow).toLocaleString('en-US')} kg`);
+      if (weights && (weights.tow || weights.tow === 0)) parts.push(`TOW ${Math.round(weights.tow).toLocaleString('en-US')} kg`);
       const rwy = ((d && d.depRwy) || '').trim();
       if (rwy) parts.push(`RWY ${rwy.toUpperCase()}`);
       if (d && d.fl) parts.push(`FL${d.fl}`);
