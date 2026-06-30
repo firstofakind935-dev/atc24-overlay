@@ -56,7 +56,7 @@
     const base = PERF[ac];
     if (!base) return null;
     const w = weights || {};
-    if (!w.tow || !w.ldw || !w.mtow || !w.mlw) return null;
+    if (!(w.tow > 0) || !(w.ldw > 0) || !(w.mtow > 0) || !(w.mlw > 0)) return null;
 
     const loadTO = clamp(w.tow / w.mtow, 0.5, 1.05);
     const loadLD = clamp(w.ldw / w.mlw, 0.5, 1.05);
@@ -72,7 +72,7 @@
       to:  clamp(Math.round(base.n1.to  + (loadTO - 0.85) * 18), 30, 100),
       clb: clamp(Math.round(base.n1.clb + (loadTO - 0.85) * 6 + (flHi ? 1 : 0)), 30, 100),
       crz: clamp(Math.round(base.n1.crz + (flHi ? 2 : 0)), 30, 100),
-      des: clamp(Math.round(base.n1.des), 30, 100),
+      des: base.n1.des,
       ldg: clamp(Math.round(base.n1.ldg + (loadLD - 0.85) * 10 + (lightLD ? -1 : 0)), 30, 100),
     };
 

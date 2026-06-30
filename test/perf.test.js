@@ -30,6 +30,7 @@ assert.equal(computePerf({ aircraft: 'F16' }, { tow: 50, ldw: 50, mtow: 100, mlw
 // Missing weights → null
 assert.equal(computePerf({ aircraft: 'B737' }, null), null);
 assert.equal(computePerf({ aircraft: 'B737' }, { tow: 0, ldw: 0, mtow: 0, mlw: 0 }), null);
+assert.equal(computePerf(null, { tow: 85, ldw: 85, mtow: 100, mlw: 100 }), null);
 
 // rwyFactor is deterministic and 0-or-1
 {
@@ -40,11 +41,14 @@ assert.equal(computePerf({ aircraft: 'B737' }, { tow: 0, ldw: 0, mtow: 0, mlw: 0
   assert.equal(rwyFactor(undefined), 0);
 }
 
-// computePerf is deterministic for the same inputs (incl. runway)
+// Runway factor path + concrete values (A320, depRwy '09R' → rwyFactor 1)
 {
   const d = { aircraft: 'A320', depRwy: '09R', fl: '120' };
   const w = { tow: 70, ldw: 60, mtow: 90, mlw: 80 };
-  assert.deepEqual(computePerf(d, w), computePerf(d, w));
+  const p = computePerf(d, w);
+  assert.deepEqual(p, { toFlap: 2, ldgFlap: 4, n1: { to: 89, clb: 85, crz: 80, des: 38, ldg: 59 } });
+  // determinism: identical inputs → identical output
+  assert.deepEqual(computePerf(d, w), p);
 }
 
 // All N1 outputs stay within [30, 100] even at extreme weight
